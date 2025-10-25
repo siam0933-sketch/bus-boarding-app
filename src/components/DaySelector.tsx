@@ -28,7 +28,6 @@ export const DaySelector: React.FC = () => {
                 isSelected && styles.selectedChipText,
               ]}
               mode="outlined"
-              selectedColor="#2196F3"
             >
               {day}
             </Chip>

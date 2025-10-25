@@ -17,6 +17,7 @@ export const RouteSelector: React.FC = () => {
         value={selectedRoute}
         onValueChange={setSelectedRoute}
         buttons={buttons}
+        style={styles.segmentedButtons}
       />
     </View>
   );
@@ -32,5 +33,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  segmentedButtons: {
+    width: '100%',
   },
 });

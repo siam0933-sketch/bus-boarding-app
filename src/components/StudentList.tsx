@@ -68,12 +68,20 @@ export const StudentList: React.FC = () => {
                   </Text>
                 </View>
                 <View style={[styles.stationCell, boarded && styles.cellBoarded]}>
-                  <Text style={[styles.cellText, boarded && styles.cellTextBoarded]}>
+                  <Text
+                    style={[styles.cellText, boarded && styles.cellTextBoarded]}
+                    adjustsFontSizeToFit={true}
+                    numberOfLines={1}
+                  >
                     {student.station}
                   </Text>
                 </View>
                 <View style={[styles.nameCell, boarded && styles.cellBoarded]}>
-                  <Text style={[styles.cellText, boarded && styles.cellTextBoarded]}>
+                  <Text
+                    style={[styles.cellText, boarded && styles.cellTextBoarded]}
+                    adjustsFontSizeToFit={true}
+                    numberOfLines={1}
+                  >
                     {student.name}
                   </Text>
                 </View>
@@ -173,7 +181,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   cellText: {
-    fontSize: 36,
+    fontSize: 23,
     fontWeight: 'bold',
     color: '#000',
   },

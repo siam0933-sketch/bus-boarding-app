@@ -78,6 +78,31 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
         console.log(`Row ${rowIndex}: timeCell.v=${timeCell?.v}, timeCell.f=${timeCell?.f}, station=${stationCell?.v}, name=${nameCell?.v}`);
 
+        // A, B, C열 중 하나라도 노선 정보가 있는지 확인 (병합 셀 대응)
+        const timeCellValue = String(timeCell?.v || '').trim();
+        const stationCellValue = String(stationCell?.v || '').trim();
+        const nameCellValue = String(nameCell?.v || '').trim();
+
+        // 노선 정보 행 감지 (3시부, 5시부, 7시부 등) - A, B, C열 모두 체크
+        if (timeCellValue.includes('시부') || timeCellValue.includes('반')) {
+          currentRoute = timeCellValue;
+          console.log(`Row ${rowIndex}: 노선 정보 감지 (A열) - "${currentRoute}"`);
+          rowIndex++;
+          continue;
+        }
+        if (stationCellValue.includes('시부') || stationCellValue.includes('반')) {
+          currentRoute = stationCellValue;
+          console.log(`Row ${rowIndex}: 노선 정보 감지 (B열) - "${currentRoute}"`);
+          rowIndex++;
+          continue;
+        }
+        if (nameCellValue.includes('시부') || nameCellValue.includes('반')) {
+          currentRoute = nameCellValue;
+          console.log(`Row ${rowIndex}: 노선 정보 감지 (C열) - "${currentRoute}"`);
+          rowIndex++;
+          continue;
+        }
+
         // 이름이 없으면 건너뛰기
         if (!nameCell || !nameCell.v) {
           rowIndex++;
@@ -85,14 +110,6 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
         }
 
         const nameString = String(nameCell.v).trim();
-
-        // 노선 정보 행 감지 (3시부, 5시부, 7시부 등)
-        if (nameString.includes('시부') || nameString.includes('반')) {
-          currentRoute = nameString;
-          console.log(`Row ${rowIndex}: 노선 정보 감지 - "${currentRoute}"`);
-          rowIndex++;
-          continue;
-        }
 
         // 헤더 행 건너뛰기 (정류장, 탑승객, 시간 등)
         if (nameString === '탑승객' || nameString === '정류장' || nameString === '이름' || nameString === '시간') {

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput } from 'react-native';
-import { Text } from 'react-native-paper';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text } from 'react-native';
 import { DaySelector } from '../components/DaySelector';
 import { RouteSelector } from '../components/RouteSelector';
 import { StudentList } from '../components/StudentList';
 
 export const MainScreen: React.FC = () => {
-  const [memo1, setMemo1] = useState('');
-  const [memo2, setMemo2] = useState('');
+  const [memo, setMemo] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -22,26 +21,27 @@ export const MainScreen: React.FC = () => {
       {/* 노선 선택 */}
       <RouteSelector />
 
-      {/* 메모 입력 영역 (2칸) */}
+      {/* 메모 입력 영역 */}
       <View style={styles.memoRow}>
-        <View style={[styles.memoCell, styles.memoCellLeft]}>
-          <TextInput
-            style={styles.memoInput}
-            value={memo1}
-            onChangeText={setMemo1}
-            placeholder="메모를 입력하세요"
-            placeholderTextColor="#999"
-          />
-        </View>
         <View style={styles.memoCell}>
           <TextInput
-            style={styles.memoInput}
-            value={memo2}
-            onChangeText={setMemo2}
-            placeholder="(메모2가)"
+            style={[styles.memoInput, isExpanded && styles.memoInputExpanded]}
+            value={memo}
+            onChangeText={setMemo}
+            placeholder="메모를 입력하세요"
             placeholderTextColor="#999"
+            multiline={isExpanded}
+            numberOfLines={isExpanded ? 5 : 1}
           />
         </View>
+        <TouchableOpacity
+          style={styles.expandButton}
+          onPress={() => setIsExpanded(!isExpanded)}
+        >
+          <Text style={styles.expandButtonText}>
+            {isExpanded ? '▲' : '▼'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* 학생 목록 */}
@@ -72,13 +72,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#000',
+    alignItems: 'stretch',
   },
   memoCell: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 12,
-  },
-  memoCellLeft: {
     borderRightWidth: 1,
     borderRightColor: '#000',
   },
@@ -86,5 +85,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     padding: 0,
+    textAlignVertical: 'top',
+  },
+  memoInputExpanded: {
+    minHeight: 100,
+  },
+  expandButton: {
+    width: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  expandButtonText: {
+    fontSize: 18,
+    color: '#000',
+    fontWeight: 'bold',
   },
 });

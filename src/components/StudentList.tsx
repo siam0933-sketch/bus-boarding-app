@@ -120,6 +120,7 @@ export const StudentList: React.FC = () => {
             onPress={resetBoardingRecords}
             style={styles.resetButton}
             buttonColor="#2196F3"
+            labelStyle={styles.buttonLabel}
           >
             탑승기록 완료
           </Button>
@@ -246,5 +247,10 @@ const styles = StyleSheet.create({
   resetButton: {
     paddingVertical: 8,
     borderRadius: 12,
+  },
+  buttonLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
 });

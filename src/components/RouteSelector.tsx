@@ -42,14 +42,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ADD8E6',
+    backgroundColor: '#ffffff',
   },
   routeCellBorder: {
     borderRightWidth: 1,
     borderRightColor: '#000',
   },
   routeSelected: {
-    backgroundColor: '#87CEEB',
+    backgroundColor: '#ADD8E6',
   },
   routeText: {
     fontSize: 15,

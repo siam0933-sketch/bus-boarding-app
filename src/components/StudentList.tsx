@@ -1,14 +1,34 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Modal } from 'react-native';
 import { Button, ActivityIndicator } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
 
 export const StudentList: React.FC = () => {
-  const { filteredStudents, boardingRecords, toggleBoarding, resetBoardingRecords, loading } = useApp();
+  const { filteredStudents, boardingRecords, studentStatuses, toggleBoarding, setStudentStatus, resetBoardingRecords, loading } = useApp();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   const isBoarded = (studentId: string): boolean => {
     const record = boardingRecords.find((r) => r.studentId === studentId);
     return record?.isBoarded || false;
+  };
+
+  const getStudentStatus = (studentId: string): string | null => {
+    const status = studentStatuses.find((s) => s.studentId === studentId);
+    return status?.status || null;
+  };
+
+  const handleLongPress = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setMenuVisible(true);
+  };
+
+  const handleStatusSelect = (status: '결석' | '변경' | '직접') => {
+    if (selectedStudentId) {
+      setStudentStatus(selectedStudentId, status);
+    }
+    setMenuVisible(false);
+    setSelectedStudentId(null);
   };
 
   // 시간 포맷팅 함수 (시:분만 표시)
@@ -76,20 +96,68 @@ export const StudentList: React.FC = () => {
                     {student.station}
                   </Text>
                 </View>
-                <View style={[styles.nameCell, boarded && styles.cellBoarded]}>
-                  <Text
-                    style={[styles.cellText, boarded && styles.cellTextBoarded]}
-                    adjustsFontSizeToFit={true}
-                    numberOfLines={1}
-                  >
-                    {student.name}
-                  </Text>
-                </View>
+                <TouchableOpacity
+                  style={[styles.nameCell, boarded && styles.cellBoarded]}
+                  onLongPress={() => handleLongPress(student.id)}
+                  delayLongPress={500}
+                >
+                  <View>
+                    <Text
+                      style={[styles.cellText, boarded && styles.cellTextBoarded]}
+                      adjustsFontSizeToFit={true}
+                      numberOfLines={1}
+                    >
+                      {student.name}
+                    </Text>
+                    {getStudentStatus(student.id) && (
+                      <Text style={styles.statusText}>
+                        {getStudentStatus(student.id)}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })
         )}
       </ScrollView>
+
+      {/* 상태 선택 팝업 메뉴 */}
+      <Modal
+        transparent={true}
+        visible={menuVisible}
+        onRequestClose={() => setMenuVisible(false)}
+        animationType="fade"
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleStatusSelect('결석')}
+            >
+              <Text style={styles.menuItemText}>결석</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleStatusSelect('변경')}
+            >
+              <Text style={styles.menuItemText}>변경</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleStatusSelect('직접')}
+            >
+              <Text style={styles.menuItemText}>직접</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {filteredStudents.length > 0 && (
         <View style={styles.buttonContainer}>
@@ -188,6 +256,40 @@ const styles = StyleSheet.create({
   cellTextBoarded: {
     fontWeight: 'bold',
     color: '#000',
+  },
+  statusText: {
+    fontSize: 15,
+    color: '#666',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#000',
+    minWidth: 150,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  menuItemText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#000',
   },
   buttonContainer: {
     borderTopWidth: 1,

@@ -2,14 +2,21 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { Student, DayOfWeek, BoardingRecord, Route } from '../types';
 import { fetchAllStudents } from '../services/googleSheets';
 
+interface StudentStatus {
+  studentId: string;
+  status: '결석' | '변경' | '직접';
+}
+
 interface AppContextType {
   students: Student[];
   selectedDay: DayOfWeek;
   selectedRoute: string;
   boardingRecords: BoardingRecord[];
+  studentStatuses: StudentStatus[];
   setSelectedDay: (day: DayOfWeek) => void;
   setSelectedRoute: (routeId: string) => void;
   toggleBoarding: (studentId: string) => void;
+  setStudentStatus: (studentId: string, status: '결석' | '변경' | '직접') => void;
   resetBoardingRecords: () => void;
   filteredStudents: Student[];
   routes: Route[];
@@ -31,6 +38,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(getCurrentDay());
   const [selectedRoute, setSelectedRoute] = useState<string>('');
   const [boardingRecords, setBoardingRecords] = useState<BoardingRecord[]>([]);
+  const [studentStatuses, setStudentStatuses] = useState<StudentStatus[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Google Sheets에서 학생 데이터 가져오기
@@ -94,9 +102,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // 학생 상태 설정
+  const setStudentStatus = (studentId: string, status: '결석' | '변경' | '직접') => {
+    setStudentStatuses((prev) => {
+      const existing = prev.find((s) => s.studentId === studentId);
+      if (existing) {
+        // 기존 상태 업데이트
+        return prev.map((s) =>
+          s.studentId === studentId ? { ...s, status } : s
+        );
+      } else {
+        // 새로운 상태 추가
+        return [...prev, { studentId, status }];
+      }
+    });
+  };
+
   // 탑승 기록 초기화
   const resetBoardingRecords = () => {
     setBoardingRecords([]);
+    setStudentStatuses([]);
   };
 
   return (
@@ -106,9 +131,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedDay,
         selectedRoute,
         boardingRecords,
+        studentStatuses,
         setSelectedDay,
         setSelectedRoute,
         toggleBoarding,
+        setStudentStatus,
         resetBoardingRecords,
         filteredStudents,
         routes,

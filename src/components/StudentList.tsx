@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   cellText: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: 'bold',
     color: '#000',
   },

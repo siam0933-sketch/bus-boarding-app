@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Student, DayOfWeek, BoardingRecord } from '../types';
-import { mockRoutes } from '../utils/mockData';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { Student, DayOfWeek, BoardingRecord, Route } from '../types';
 import { fetchAllStudents } from '../services/googleSheets';
 
 interface AppContextType {
@@ -13,7 +12,7 @@ interface AppContextType {
   toggleBoarding: (studentId: string) => void;
   resetBoardingRecords: () => void;
   filteredStudents: Student[];
-  routes: typeof mockRoutes;
+  routes: Route[];
   loading: boolean;
   refreshStudents: () => Promise<void>;
 }
@@ -30,7 +29,7 @@ const getCurrentDay = (): DayOfWeek => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(getCurrentDay());
-  const [selectedRoute, setSelectedRoute] = useState<string>('3시부');
+  const [selectedRoute, setSelectedRoute] = useState<string>('');
   const [boardingRecords, setBoardingRecords] = useState<BoardingRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -52,6 +51,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     refreshStudents();
   }, []);
+
+  // Google Sheets 데이터에서 노선 자동 감지
+  const routes = useMemo(() => {
+    // students에서 unique한 route 값 추출
+    const uniqueRoutes = Array.from(new Set(students.map(s => s.route)))
+      .filter(route => route) // 빈 값 제거
+      .sort(); // 정렬
+
+    return uniqueRoutes.map(route => ({ id: route, name: route }));
+  }, [students]);
+
+  // 첫 로드 시 또는 routes 변경 시 첫 번째 노선 선택
+  useEffect(() => {
+    if (routes.length > 0 && !selectedRoute) {
+      setSelectedRoute(routes[0].id);
+    }
+  }, [routes, selectedRoute]);
 
   // 선택된 요일과 노선에 따라 학생 필터링
   const filteredStudents = students.filter(
@@ -95,7 +111,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleBoarding,
         resetBoardingRecords,
         filteredStudents,
-        routes: mockRoutes,
+        routes,
         loading,
         refreshStudents,
       }}

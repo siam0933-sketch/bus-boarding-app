@@ -5,9 +5,14 @@ import { Student, DayOfWeek } from '../types';
  *
  * 시트 구조:
  * - 1행: 요일 (월요일, 화요일, 수요일, 목요일, 금요일)
- * - 2행: 시간대 (3시부, 5시부)
+ * - 2행: 노선명 (3시부, 5시부, 7시부 등 - 자유롭게 변경 가능)
  * - 3행: 컬럼 헤더 (시간 | 정류장 | 이름)
  * - 4행부터: 실제 데이터
+ *
+ * 노선 추가 방법:
+ * - 새로운 노선 정보를 추가하면 자동으로 감지됩니다
+ * - 예: "7시부", "아침반", "저녁반" 등 자유롭게 사용 가능
+ * - "시부" 또는 "반"이 포함된 텍스트를 노선으로 인식합니다
  *
  * 시트가 공개 설정되어 있어야 합니다:
  * 1. Google Sheets에서 "공유" 클릭
@@ -58,6 +63,7 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
       // 데이터 파싱 - Row 0부터 시작
       let rowIndex = 0;
       let lastValidTime = '';
+      let currentRoute = ''; // 현재 노선 추적
 
 
       while (rowIndex < rows.length) {
@@ -72,7 +78,7 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
         console.log(`Row ${rowIndex}: timeCell.v=${timeCell?.v}, timeCell.f=${timeCell?.f}, station=${stationCell?.v}, name=${nameCell?.v}`);
 
-        // 이름이 없거나 "정류장"/"탑승객" 같은 헤더면 건너뛰기
+        // 이름이 없으면 건너뛰기
         if (!nameCell || !nameCell.v) {
           rowIndex++;
           continue;
@@ -80,8 +86,16 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
         const nameString = String(nameCell.v).trim();
 
-        // 헤더 행 건너뛰기 (정류장, 탑승객 등)
-        if (nameString === '탑승객' || nameString === '정류장' || nameString.includes('시부')) {
+        // 노선 정보 행 감지 (3시부, 5시부, 7시부 등)
+        if (nameString.includes('시부') || nameString.includes('반')) {
+          currentRoute = nameString;
+          console.log(`Row ${rowIndex}: 노선 정보 감지 - "${currentRoute}"`);
+          rowIndex++;
+          continue;
+        }
+
+        // 헤더 행 건너뛰기 (정류장, 탑승객, 시간 등)
+        if (nameString === '탑승객' || nameString === '정류장' || nameString === '이름' || nameString === '시간') {
           console.log(`Row ${rowIndex}: 헤더 행 건너뛰기`);
           rowIndex++;
           continue;
@@ -118,16 +132,10 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
         const station = String(stationCell?.v || '').trim();
 
-        console.log(`Row ${rowIndex}: 최종 time="${time}", lastValidTime="${lastValidTime}", station="${station}", names="${nameString}"`);
+        console.log(`Row ${rowIndex}: 최종 time="${time}", lastValidTime="${lastValidTime}", station="${station}", names="${nameString}", currentRoute="${currentRoute}"`);
 
-        // 시간을 보고 3시부/5시부 구분 (15시대 = 3시부, 17시대 = 5시부)
-        let route = '3시부';
-        if (time) {
-          const hour = parseInt(time.split(':')[0]);
-          if (hour >= 17) {
-            route = '5시부';
-          }
-        }
+        // 노선이 아직 감지되지 않았으면 기본값 사용
+        const route = currentRoute || '3시부';
 
         // 세미콜론으로 구분된 이름들 분리
         const names = nameString.split(';').map(n => n.trim()).filter(n => n);

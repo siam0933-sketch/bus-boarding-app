@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#000',
   },
   timeCell: {
-    width: 80,
-    paddingVertical: 14,
+    width: 110,
+    paddingVertical: 21,
     paddingHorizontal: 8,
     borderRightWidth: 1,
     borderRightColor: '#000',
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   },
   nameCell: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: 21,
     paddingHorizontal: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -168,7 +168,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#90EE90',
   },
   cellText: {
-    fontSize: 14,
+    fontSize: 28,
+    fontWeight: 'bold',
     color: '#000',
   },
   cellTextBoarded: {

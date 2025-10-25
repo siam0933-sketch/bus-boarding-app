@@ -3,16 +3,16 @@ import { Student, DayOfWeek } from '../types';
 /**
  * Google Sheets API 연동 서비스
  *
- * 시트 구조:
+ * 시트 구조 (4칸 구조):
  * - 1행: 요일 (월요일, 화요일, 수요일, 목요일, 금요일)
- * - 2행: 노선명 (3시부, 5시부, 7시부 등 - 자유롭게 변경 가능)
- * - 3행: 컬럼 헤더 (시간 | 정류장 | 이름)
- * - 4행부터: 실제 데이터
+ * - 2행부터: 노선 | 시간 | 정류장 | 이름
+ *   예: 3시부 | 15:00 | 학교앞 | 김철수
+ *       5시부 | 17:00 | 마트 | 최지민
+ *       7시부 | 19:00 | 공원 | 홍길동
  *
  * 노선 추가 방법:
- * - 새로운 노선 정보를 추가하면 자동으로 감지됩니다
+ * - A열(첫 번째 열)에 노선명을 입력하면 자동으로 감지
  * - 예: "7시부", "아침반", "저녁반" 등 자유롭게 사용 가능
- * - "시부" 또는 "반"이 포함된 텍스트를 노선으로 인식합니다
  *
  * 시트가 공개 설정되어 있어야 합니다:
  * 1. Google Sheets에서 "공유" 클릭
@@ -22,13 +22,13 @@ import { Student, DayOfWeek } from '../types';
 const SPREADSHEET_ID = '1LRiMX6-q3E5Zyy12nZtkBW1ccG6HjpJLBieT-S55Jb4';
 const GOOGLE_SHEETS_API_KEY = ''; // API 키 없이도 공개 시트는 작동
 
-// 요일과 컬럼 매핑
+// 요일과 컬럼 매핑 (4칸 구조: 노선, 시간, 정류장, 이름)
 const DAY_COLUMN_MAP: { [key: string]: number } = {
   '월': 0,  // A열부터 시작 (월요일)
-  '화': 3,  // D열 (화요일)
-  '수': 6,  // G열 (수요일)
-  '목': 9,  // J열 (목요일)
-  '금': 12, // M열 (금요일)
+  '화': 4,  // E열 (화요일)
+  '수': 8,  // I열 (수요일)
+  '목': 12, // M열 (목요일)
+  '금': 16, // Q열 (금요일)
 };
 
 /**
@@ -63,8 +63,6 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
       // 데이터 파싱 - Row 0부터 시작
       let rowIndex = 0;
       let lastValidTime = '';
-      let currentRoute = ''; // 현재 노선 추적
-
 
       while (rowIndex < rows.length) {
         const row = rows[rowIndex];
@@ -72,36 +70,13 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
           break;
         }
 
-        const timeCell = row.c[baseCol];
-        const stationCell = row.c[baseCol + 1];
-        const nameCell = row.c[baseCol + 2];
+        // 4칸 구조: 노선 | 시간 | 정류장 | 이름
+        const routeCell = row.c[baseCol];       // A열: 노선
+        const timeCell = row.c[baseCol + 1];    // B열: 시간
+        const stationCell = row.c[baseCol + 2]; // C열: 정류장
+        const nameCell = row.c[baseCol + 3];    // D열: 이름
 
-        console.log(`Row ${rowIndex}: timeCell.v=${timeCell?.v}, timeCell.f=${timeCell?.f}, station=${stationCell?.v}, name=${nameCell?.v}`);
-
-        // A, B, C열 중 하나라도 노선 정보가 있는지 확인 (병합 셀 대응)
-        const timeCellValue = String(timeCell?.v || '').trim();
-        const stationCellValue = String(stationCell?.v || '').trim();
-        const nameCellValue = String(nameCell?.v || '').trim();
-
-        // 노선 정보 행 감지 (3시부, 5시부, 7시부 등) - A, B, C열 모두 체크
-        if (timeCellValue.includes('시부') || timeCellValue.includes('반')) {
-          currentRoute = timeCellValue;
-          console.log(`Row ${rowIndex}: 노선 정보 감지 (A열) - "${currentRoute}"`);
-          rowIndex++;
-          continue;
-        }
-        if (stationCellValue.includes('시부') || stationCellValue.includes('반')) {
-          currentRoute = stationCellValue;
-          console.log(`Row ${rowIndex}: 노선 정보 감지 (B열) - "${currentRoute}"`);
-          rowIndex++;
-          continue;
-        }
-        if (nameCellValue.includes('시부') || nameCellValue.includes('반')) {
-          currentRoute = nameCellValue;
-          console.log(`Row ${rowIndex}: 노선 정보 감지 (C열) - "${currentRoute}"`);
-          rowIndex++;
-          continue;
-        }
+        console.log(`Row ${rowIndex}: route=${routeCell?.v}, time=${timeCell?.v || timeCell?.f}, station=${stationCell?.v}, name=${nameCell?.v}`);
 
         // 이름이 없으면 건너뛰기
         if (!nameCell || !nameCell.v) {
@@ -111,8 +86,8 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
         const nameString = String(nameCell.v).trim();
 
-        // 헤더 행 건너뛰기 (정류장, 탑승객, 시간 등)
-        if (nameString === '탑승객' || nameString === '정류장' || nameString === '이름' || nameString === '시간') {
+        // 헤더 행 건너뛰기 (정류장, 탑승객, 시간, 이름, 노선 등)
+        if (nameString === '탑승객' || nameString === '정류장' || nameString === '이름' || nameString === '시간' || nameString.includes('요일')) {
           console.log(`Row ${rowIndex}: 헤더 행 건너뛰기`);
           rowIndex++;
           continue;
@@ -149,10 +124,10 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
         const station = String(stationCell?.v || '').trim();
 
-        console.log(`Row ${rowIndex}: 최종 time="${time}", lastValidTime="${lastValidTime}", station="${station}", names="${nameString}", currentRoute="${currentRoute}"`);
+        // A열에서 노선 직접 읽기
+        const route = String(routeCell?.v || '').trim() || '3시부';
 
-        // 노선이 아직 감지되지 않았으면 기본값 사용
-        const route = currentRoute || '3시부';
+        console.log(`Row ${rowIndex}: 최종 time="${time}", lastValidTime="${lastValidTime}", station="${station}", names="${nameString}", route="${route}"`);
 
         // 세미콜론으로 구분된 이름들 분리
         const names = nameString.split(';').map(n => n.trim()).filter(n => n);

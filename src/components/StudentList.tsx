@@ -98,6 +98,7 @@ export const StudentList: React.FC = () => {
                 </View>
                 <TouchableOpacity
                   style={[styles.nameCell, boarded && styles.cellBoarded]}
+                  onPress={() => toggleBoarding(student.id)}
                   onLongPress={() => handleLongPress(student.id)}
                   delayLongPress={500}
                 >

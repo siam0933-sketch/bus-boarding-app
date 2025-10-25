@@ -2,7 +2,6 @@
   "name": "bus-boarding-app",
   "version": "1.0.0",
   "main": "index.js",
-  "homepage": "/bus-boarding-app/",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",

@@ -34,6 +34,14 @@ jobs:
       - name: Build web app
         run: npm run build:web
 
+      - name: Fix paths for GitHub Pages subdirectory
+        run: |
+          cd dist
+          echo "" > .nojekyll
+          sed -i 's|href="/|href="/bus-boarding-app/|g' index.html
+          sed -i 's|src="/|src="/bus-boarding-app/|g' index.html
+          sed -i 's|url(/|url(/bus-boarding-app/|g' index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

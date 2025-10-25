@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Chip } from 'react-native-paper';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { DayOfWeek } from '../types';
 import { useApp } from '../context/AppContext';
 
@@ -11,75 +10,57 @@ export const DaySelector: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.chipContainer}>
-        {DAYS.map((day) => {
-          const isSelected = selectedDay === day;
-          return (
-            <Chip
-              key={day}
-              selected={isSelected}
-              onPress={() => setSelectedDay(day)}
-              style={[
-                styles.chip,
-                isSelected && styles.selectedChip,
-              ]}
-              textStyle={[
-                styles.chipText,
-                isSelected && styles.selectedChipText,
-              ]}
-              mode="outlined"
-            >
+      {DAYS.map((day, index) => {
+        const isSelected = selectedDay === day;
+        const isLast = index === DAYS.length - 1;
+        return (
+          <TouchableOpacity
+            key={day}
+            onPress={() => setSelectedDay(day)}
+            style={[
+              styles.dayCell,
+              !isLast && styles.dayCellBorder,
+              isSelected && styles.daySelected,
+            ]}
+          >
+            <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>
               {day}
-            </Chip>
-          );
-        })}
-      </View>
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  chipContainer: {
     flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
   },
-  chip: {
+  dayCell: {
     flex: 1,
-    height: 45,
-    maxWidth: 50,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#e0e0e0',
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#ffffff',
   },
-  selectedChip: {
-    backgroundColor: '#2196F3',
-    borderColor: '#2196F3',
-    elevation: 2,
-    shadowColor: '#2196F3',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+  dayCellBorder: {
+    borderRightWidth: 1,
+    borderRightColor: '#000',
   },
-  chipText: {
-    fontSize: 15,
+  daySelected: {
+    backgroundColor: '#FFE082',
+  },
+  dayText: {
+    fontSize: 14,
     fontWeight: '600',
-    textAlign: 'center',
-    color: '#666',
+    color: '#000',
   },
-  selectedChipText: {
-    color: '#ffffff',
+  dayTextSelected: {
     fontWeight: 'bold',
+    color: '#000',
   },
 });

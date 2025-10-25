@@ -1,42 +1,50 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TextInput } from 'react-native';
-import { IconButton, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { DaySelector } from '../components/DaySelector';
 import { RouteSelector } from '../components/RouteSelector';
 import { StudentList } from '../components/StudentList';
 
 export const MainScreen: React.FC = () => {
-  const [memo, setMemo] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [memo1, setMemo1] = useState('');
+  const [memo2, setMemo2] = useState('');
 
   return (
     <View style={styles.container}>
-      {/* 메모 입력 영역 */}
-      <View style={styles.memoContainer}>
-        <View style={styles.memoInputContainer}>
+      {/* 제목 */}
+      <View style={styles.titleContainer}>
+        <Text style={styles.titleText}>탑승관리</Text>
+      </View>
+
+      {/* 요일 선택 */}
+      <DaySelector />
+
+      {/* 노선 선택 */}
+      <RouteSelector />
+
+      {/* 메모 입력 영역 (2칸) */}
+      <View style={styles.memoRow}>
+        <View style={[styles.memoCell, styles.memoCellLeft]}>
           <TextInput
-            style={[
-              styles.memoInput,
-              isExpanded && styles.memoInputExpanded,
-            ]}
-            value={memo}
-            onChangeText={setMemo}
-            placeholder="메모를 입력하세요..."
-            multiline={isExpanded}
-            numberOfLines={isExpanded ? 5 : 1}
+            style={styles.memoInput}
+            value={memo1}
+            onChangeText={setMemo1}
+            placeholder="메모를 입력하세요"
             placeholderTextColor="#999"
           />
-          <IconButton
-            icon={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={24}
-            onPress={() => setIsExpanded(!isExpanded)}
-            style={styles.expandButton}
+        </View>
+        <View style={styles.memoCell}>
+          <TextInput
+            style={styles.memoInput}
+            value={memo2}
+            onChangeText={setMemo2}
+            placeholder="(메모2가)"
+            placeholderTextColor="#999"
           />
         </View>
       </View>
 
-      <DaySelector />
-      <RouteSelector />
+      {/* 학생 목록 */}
       <StudentList />
     </View>
   );
@@ -45,45 +53,39 @@ export const MainScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  memoContainer: {
     backgroundColor: '#ffffff',
+  },
+  titleContainer: {
     paddingTop: 50,
     paddingBottom: 12,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    alignItems: 'center',
   },
-  memoInputContainer: {
+  titleText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  memoRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    paddingLeft: 16,
-    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+  },
+  memoCell: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  memoCellLeft: {
+    borderRightWidth: 1,
+    borderRightColor: '#000',
   },
   memoInput: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: 14,
-    paddingRight: 8,
+    fontSize: 14,
     color: '#333',
-    minHeight: 50,
-    fontFamily: 'System',
-  },
-  memoInputExpanded: {
-    minHeight: 140,
-    textAlignVertical: 'top',
-    paddingTop: 14,
-  },
-  expandButton: {
-    margin: 0,
-    marginTop: 4,
+    padding: 0,
   },
 });

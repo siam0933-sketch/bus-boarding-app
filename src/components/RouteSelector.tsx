@@ -1,40 +1,63 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { SegmentedButtons } from 'react-native-paper';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useApp } from '../context/AppContext';
 
 export const RouteSelector: React.FC = () => {
   const { selectedRoute, setSelectedRoute, routes } = useApp();
 
-  const buttons = routes.map((route) => ({
-    value: route.id,
-    label: route.name,
-  }));
-
   return (
     <View style={styles.container}>
-      <SegmentedButtons
-        value={selectedRoute}
-        onValueChange={setSelectedRoute}
-        buttons={buttons}
-        style={styles.segmentedButtons}
-      />
+      {routes.map((route, index) => {
+        const isSelected = selectedRoute === route.id;
+        const isLast = index === routes.length - 1;
+        return (
+          <TouchableOpacity
+            key={route.id}
+            onPress={() => setSelectedRoute(route.id)}
+            style={[
+              styles.routeCell,
+              !isLast && styles.routeCellBorder,
+              isSelected && styles.routeSelected,
+            ]}
+          >
+            <Text style={[styles.routeText, isSelected && styles.routeTextSelected]}>
+              {route.name}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
+    flexDirection: 'row',
     backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+  },
+  routeCell: {
+    flex: 1,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#ADD8E6',
   },
-  segmentedButtons: {
-    width: '100%',
+  routeCellBorder: {
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+  },
+  routeSelected: {
+    backgroundColor: '#87CEEB',
+  },
+  routeText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+  },
+  routeTextSelected: {
+    fontWeight: 'bold',
+    color: '#000',
   },
 });

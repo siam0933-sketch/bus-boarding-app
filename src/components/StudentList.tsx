@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Button, ActivityIndicator } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
+import { Button, ActivityIndicator } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
 
 export const StudentList: React.FC = () => {
@@ -44,85 +44,56 @@ export const StudentList: React.FC = () => {
     );
   }
 
-  // 시간/정류장으로 그룹화
-  const groupedStudents = filteredStudents.reduce((acc, student) => {
-    const key = `${student.expectedTime}-${student.station}`;
-    if (!acc[key]) {
-      acc[key] = {
-        time: student.expectedTime,
-        station: student.station,
-        students: [],
-      };
-    }
-    acc[key].students.push(student);
-    return acc;
-  }, {} as Record<string, { time: string; station: string; students: typeof filteredStudents }>);
-
-  const groups = Object.values(groupedStudents);
-
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
-        {groups.length === 0 ? (
+        {filteredStudents.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text variant="bodyLarge" style={styles.emptyText}>
+            <Text style={styles.emptyText}>
               이 요일과 노선에 등록된 학생이 없습니다.
             </Text>
           </View>
         ) : (
-          groups.map((group, groupIndex) => (
-            <View key={groupIndex} style={styles.groupCard}>
-              {/* 시간 */}
-              <View style={styles.timeRow}>
-                <Text style={styles.timeText}>{formatTime(group.time)}</Text>
-              </View>
-
-              {/* 정류장과 탑승자를 좌우로 배치 */}
-              <View style={styles.contentRow}>
-                {/* 정류장 (왼쪽) */}
-                <View style={styles.stationColumn}>
-                  <Text style={styles.stationText}>{group.station}</Text>
+          filteredStudents.map((student) => {
+            const boarded = isBoarded(student.id);
+            return (
+              <TouchableOpacity
+                key={student.id}
+                onPress={() => toggleBoarding(student.id)}
+                style={styles.studentRow}
+              >
+                <View style={[styles.timeCell, boarded && styles.cellBoarded]}>
+                  <Text style={[styles.cellText, boarded && styles.cellTextBoarded]}>
+                    {formatTime(student.expectedTime)}
+                  </Text>
                 </View>
-
-                {/* 탑승자들 (오른쪽, 세로 배열) */}
-                <View style={styles.namesColumn}>
-                  {group.students.map((student) => {
-                    const boarded = isBoarded(student.id);
-                    return (
-                      <TouchableOpacity
-                        key={student.id}
-                        style={[
-                          styles.nameButton,
-                          boarded && styles.nameBoardedButton,
-                        ]}
-                        onPress={() => toggleBoarding(student.id)}
-                      >
-                        <Text style={[
-                          styles.nameText,
-                          boarded && styles.nameBoardedText,
-                        ]}>
-                          {student.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                <View style={[styles.stationCell, boarded && styles.cellBoarded]}>
+                  <Text style={[styles.cellText, boarded && styles.cellTextBoarded]}>
+                    {student.station}
+                  </Text>
                 </View>
-              </View>
-            </View>
-          ))
+                <View style={[styles.nameCell, boarded && styles.cellBoarded]}>
+                  <Text style={[styles.cellText, boarded && styles.cellTextBoarded]}>
+                    {student.name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
 
-      {groups.length > 0 && (
+      {filteredStudents.length > 0 && (
         <View style={styles.buttonContainer}>
           <Button
             mode="contained"
             onPress={resetBoardingRecords}
             style={styles.resetButton}
-            buttonColor="#2196F3"
+            buttonColor="#ffffff"
             labelStyle={styles.buttonLabel}
+            contentStyle={styles.buttonContent}
           >
-            탑승기록 완료
+            탑승 완료
           </Button>
         </View>
       )}
@@ -133,13 +104,13 @@ export const StudentList: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#ffffff',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#ffffff',
   },
   loadingText: {
     marginTop: 16,
@@ -148,7 +119,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    padding: 16,
   },
   emptyContainer: {
     flex: 1,
@@ -161,96 +131,66 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
   },
-  groupCard: {
-    marginBottom: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  timeRow: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: '#2196F3',
-    alignItems: 'center',
-  },
-  timeText: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    textAlign: 'center',
-  },
-  contentRow: {
+  studentRow: {
     flexDirection: 'row',
-    minHeight: 80,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
   },
-  stationColumn: {
-    flex: 1,
+  timeCell: {
+    width: 80,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#f8f9fa',
-    borderRightWidth: 1,
-    borderRightColor: '#e0e0e0',
-  },
-  stationText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
-    textAlign: 'center',
-  },
-  namesColumn: {
-    flex: 1,
-    padding: 12,
-    gap: 8,
-    justifyContent: 'center',
     backgroundColor: '#ffffff',
   },
-  nameButton: {
-    backgroundColor: '#f8f9fa',
+  stationCell: {
+    flex: 1,
     paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#e0e0e0',
+    backgroundColor: '#ffffff',
   },
-  nameBoardedButton: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
-    elevation: 2,
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+  nameCell: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
   },
-  nameText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+  cellBoarded: {
+    backgroundColor: '#90EE90',
   },
-  nameBoardedText: {
-    color: '#ffffff',
+  cellText: {
+    fontSize: 14,
+    color: '#000',
+  },
+  cellTextBoarded: {
     fontWeight: 'bold',
+    color: '#000',
   },
   buttonContainer: {
-    padding: 16,
-    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#000',
+    backgroundColor: '#ffffff',
   },
   resetButton: {
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: '#000',
+  },
+  buttonContent: {
     paddingVertical: 8,
-    borderRadius: 12,
   },
   buttonLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
   },
 });

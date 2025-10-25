@@ -63,7 +63,7 @@ export const StudentList: React.FC = () => {
                 style={styles.studentRow}
               >
                 <View style={[styles.timeCell, boarded && styles.cellBoarded]}>
-                  <Text style={[styles.cellText, boarded && styles.cellTextBoarded]}>
+                  <Text style={[styles.timeText, boarded && styles.cellTextBoarded]}>
                     {formatTime(student.expectedTime)}
                   </Text>
                 </View>
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#000',
   },
   timeCell: {
-    width: 110,
-    paddingVertical: 21,
+    width: 80,
+    paddingVertical: 14,
     paddingHorizontal: 8,
     borderRightWidth: 1,
     borderRightColor: '#000',
@@ -166,6 +166,11 @@ const styles = StyleSheet.create({
   },
   cellBoarded: {
     backgroundColor: '#90EE90',
+  },
+  timeText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000',
   },
   cellText: {
     fontSize: 28,

@@ -31,6 +31,17 @@ export const StudentList: React.FC = () => {
     setSelectedStudentId(null);
   };
 
+  // 같은 정류장과 시간의 첫 번째 학생인지 확인
+  const isFirstInGroup = (currentIndex: number): boolean => {
+    if (currentIndex === 0) return true;
+
+    const currentStudent = filteredStudents[currentIndex];
+    const previousStudent = filteredStudents[currentIndex - 1];
+
+    return currentStudent.station !== previousStudent.station ||
+           currentStudent.expectedTime !== previousStudent.expectedTime;
+  };
+
   // 시간 포맷팅 함수 (시:분만 표시)
   const formatTime = (time: string): string => {
     if (!time) return '';
@@ -74,28 +85,38 @@ export const StudentList: React.FC = () => {
             </Text>
           </View>
         ) : (
-          filteredStudents.map((student) => {
+          filteredStudents.map((student, index) => {
             const boarded = isBoarded(student.id);
+            const isFirst = isFirstInGroup(index);
             return (
               <TouchableOpacity
                 key={student.id}
                 onPress={() => toggleBoarding(student.id)}
                 style={styles.studentRow}
               >
-                <View style={[styles.timeCell, boarded && styles.cellBoarded]}>
-                  <Text style={[styles.timeText, boarded && styles.cellTextBoarded]}>
-                    {formatTime(student.expectedTime)}
-                  </Text>
-                </View>
-                <View style={[styles.stationCell, boarded && styles.cellBoarded]}>
-                  <Text
-                    style={[styles.cellText, boarded && styles.cellTextBoarded]}
-                    adjustsFontSizeToFit={true}
-                    numberOfLines={1}
-                  >
-                    {student.station}
-                  </Text>
-                </View>
+                {isFirst ? (
+                  <>
+                    <View style={[styles.timeCell, boarded && styles.cellBoarded]}>
+                      <Text style={[styles.timeText, boarded && styles.cellTextBoarded]}>
+                        {formatTime(student.expectedTime)}
+                      </Text>
+                    </View>
+                    <View style={[styles.stationCell, boarded && styles.cellBoarded]}>
+                      <Text
+                        style={[styles.cellText, boarded && styles.cellTextBoarded]}
+                        adjustsFontSizeToFit={true}
+                        numberOfLines={1}
+                      >
+                        {student.station}
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={[styles.timeCellEmpty, boarded && styles.cellBoarded]} />
+                    <View style={[styles.stationCellEmpty, boarded && styles.cellBoarded]} />
+                  </>
+                )}
                 <TouchableOpacity
                   style={[styles.nameCell, boarded && styles.cellBoarded]}
                   onPress={() => toggleBoarding(student.id)}
@@ -218,12 +239,32 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 8,
     borderRightWidth: 1,
-    borderRightColor: '#000',
+    borderRightColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  timeCellEmpty: {
+    width: 80,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRightWidth: 1,
+    borderRightColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
   stationCell: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  stationCellEmpty: {
     flex: 1,
     paddingVertical: 14,
     paddingHorizontal: 12,

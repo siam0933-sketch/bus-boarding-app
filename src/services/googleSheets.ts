@@ -1,4 +1,5 @@
 import { Student, DayOfWeek } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Google Sheets API 연동 서비스
@@ -19,8 +20,37 @@ import { Student, DayOfWeek } from '../types';
  * 2. "링크가 있는 모든 사용자" 권한을 "뷰어"로 설정
  */
 
-const SPREADSHEET_ID = '1LRiMX6-q3E5Zyy12nZtkBW1ccG6HjpJLBieT-S55Jb4';
+const DEFAULT_SPREADSHEET_ID = '1LRiMX6-q3E5Zyy12nZtkBW1ccG6HjpJLBieT-S55Jb4';
 const GOOGLE_SHEETS_API_KEY = ''; // API 키 없이도 공개 시트는 작동
+const SHEET_URL_KEY = '@sheet_url';
+
+/**
+ * Google Sheets URL에서 Spreadsheet ID 추출
+ */
+const extractSpreadsheetId = (url: string): string | null => {
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : null;
+};
+
+/**
+ * 저장된 시트 URL에서 Spreadsheet ID 가져오기
+ */
+const getSpreadsheetId = async (): Promise<string> => {
+  try {
+    const savedUrl = await AsyncStorage.getItem(SHEET_URL_KEY);
+    if (savedUrl) {
+      const id = extractSpreadsheetId(savedUrl);
+      if (id) {
+        console.log('Using saved spreadsheet ID:', id);
+        return id;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load saved sheet URL:', error);
+  }
+  console.log('Using default spreadsheet ID:', DEFAULT_SPREADSHEET_ID);
+  return DEFAULT_SPREADSHEET_ID;
+};
 
 // 요일과 컬럼 매핑 (4칸 구조: 노선, 시간, 정류장, 이름)
 const DAY_COLUMN_MAP: { [key: string]: number } = {
@@ -36,9 +66,10 @@ const DAY_COLUMN_MAP: { [key: string]: number } = {
  */
 export const fetchAllStudents = async (): Promise<Student[]> => {
   try {
+    const spreadsheetId = await getSpreadsheetId();
     const apiKey = GOOGLE_SHEETS_API_KEY ? `&key=${GOOGLE_SHEETS_API_KEY}` : '';
     // 시트 이름을 지정하지 않으면 첫 번째 시트를 가져옴
-    const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json${apiKey}`;
+    const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json${apiKey}`;
 
     console.log('Fetching data from Google Sheets...');
 

@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text, Modal } from 'react-native';
 import { DaySelector } from '../components/DaySelector';
 import { RouteSelector } from '../components/RouteSelector';
 import { StudentList } from '../components/StudentList';
+import { SettingsScreen } from './SettingsScreen';
 
 export const MainScreen: React.FC = () => {
   const [memo, setMemo] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   return (
     <View style={styles.container}>
       {/* 제목 */}
       <View style={styles.titleContainer}>
         <Text style={styles.titleText}>탑승관리</Text>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => setSettingsVisible(true)}
+        >
+          <Text style={styles.settingsIcon}>⚙️</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 요일 선택 */}
@@ -46,6 +54,15 @@ export const MainScreen: React.FC = () => {
 
       {/* 학생 목록 */}
       <StudentList />
+
+      {/* 설정 모달 */}
+      <Modal
+        visible={settingsVisible}
+        animationType="slide"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <SettingsScreen onClose={() => setSettingsVisible(false)} />
+      </Modal>
     </View>
   );
 };
@@ -56,17 +73,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#000',
-    alignItems: 'center',
+    position: 'relative',
   },
   titleText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#000',
+  },
+  settingsButton: {
+    position: 'absolute',
+    right: 16,
+    padding: 4,
+  },
+  settingsIcon: {
+    fontSize: 24,
   },
   memoRow: {
     flexDirection: 'row',

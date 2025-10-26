@@ -154,17 +154,12 @@ export const StudentList: React.FC = () => {
               const groupBoarded = isFirst ? isGroupBoarded(index) : false;
 
               return (
-                <View
-                  key={student.id}
-                  style={[
-                    styles.studentRow,
-                    isLast && styles.studentRowBorder
-                  ]}
-                >
-                  {isFirst ? (
+                <View key={student.id} style={styles.rowWrapper}>
+                  {isFirst && (
                     <>
                       <View style={[
                         styles.timeCell,
+                        styles.mergedTimeCell,
                         groupBoarded && styles.cellBoarded,
                         { height: mergedCellHeight }
                       ]}>
@@ -174,6 +169,7 @@ export const StudentList: React.FC = () => {
                       </View>
                       <View style={[
                         styles.stationCell,
+                        styles.mergedStationCell,
                         groupBoarded && styles.cellBoarded,
                         { height: mergedCellHeight }
                       ]}>
@@ -186,37 +182,37 @@ export const StudentList: React.FC = () => {
                         </Text>
                       </View>
                     </>
-                  ) : (
-                    <>
-                      <View style={styles.timeCellPlaceholder} />
-                      <View style={styles.stationCellPlaceholder} />
-                    </>
                   )}
-                  <TouchableOpacity
-                    style={[
-                      styles.nameCell,
-                      boarded && styles.cellBoarded,
-                      !isLast && styles.nameCellWithBorder
-                    ]}
-                    onPress={() => toggleBoarding(student.id)}
-                    onLongPress={() => handleLongPress(student.id)}
-                    delayLongPress={500}
-                  >
-                    <View>
-                      <Text
-                        style={[styles.cellText, boarded && styles.cellTextBoarded]}
-                        adjustsFontSizeToFit={true}
-                        numberOfLines={1}
-                      >
-                        {student.name}
-                      </Text>
-                      {getStudentStatus(student.id) && (
-                        <Text style={styles.statusText}>
-                          {getStudentStatus(student.id)}
+                  <View style={styles.studentRow}>
+                    <View style={styles.timeCellPlaceholder} />
+                    <View style={styles.stationCellPlaceholder} />
+                    <TouchableOpacity
+                      style={[
+                        styles.nameCell,
+                        boarded && styles.cellBoarded,
+                        !isLast && styles.nameCellWithBorder,
+                        isLast && styles.nameCellLastBorder
+                      ]}
+                      onPress={() => toggleBoarding(student.id)}
+                      onLongPress={() => handleLongPress(student.id)}
+                      delayLongPress={500}
+                    >
+                      <View>
+                        <Text
+                          style={[styles.cellText, boarded && styles.cellTextBoarded]}
+                          adjustsFontSizeToFit={true}
+                          numberOfLines={1}
+                        >
+                          {student.name}
                         </Text>
-                      )}
-                    </View>
-                  </TouchableOpacity>
+                        {getStudentStatus(student.id) && (
+                          <Text style={styles.statusText}>
+                            {getStudentStatus(student.id)}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               );
             })}
@@ -309,23 +305,30 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
   },
+  rowWrapper: {
+    position: 'relative',
+  },
   studentRow: {
     flexDirection: 'row',
     minHeight: 66,
-  },
-  studentRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
   },
   timeCell: {
     width: 80,
     paddingVertical: 14,
     paddingHorizontal: 8,
-    borderRightWidth: 1,
-    borderRightColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
+  },
+  mergedTimeCell: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 1,
+    borderRightWidth: 1,
+    borderRightColor: '#ddd',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
   },
   timeCellPlaceholder: {
     width: 80,
@@ -334,14 +337,24 @@ const styles = StyleSheet.create({
     width: 150,
     paddingVertical: 14,
     paddingHorizontal: 12,
-    borderRightWidth: 1,
-    borderRightColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
+  mergedStationCell: {
+    position: 'absolute',
+    left: 80,
+    top: 0,
+    zIndex: 1,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+  },
   stationCellPlaceholder: {
     width: 150,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
   },
   nameCell: {
     flex: 1,
@@ -352,6 +365,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   nameCellWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+  },
+  nameCellLastBorder: {
     borderBottomWidth: 1,
     borderBottomColor: '#000',
   },

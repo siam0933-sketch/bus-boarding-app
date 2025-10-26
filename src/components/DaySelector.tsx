@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   },
   dayCell: {
     flex: 1,
-    paddingVertical: 14,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#ffffff',
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE082',
   },
   dayText: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '600',
     color: '#000',
   },

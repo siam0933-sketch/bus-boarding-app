@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   },
   routeCell: {
     flex: 1,
-    paddingVertical: 16,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#ffffff',
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ADD8E6',
   },
   routeText: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '600',
     color: '#000',
   },

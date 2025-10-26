@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Modal } from 'react-native';
 import { Button, ActivityIndicator } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
 
+const ROW_HEIGHT = 66; // 행 높이 상수 (nameCell paddingVertical 21*2 + fontSize 23 + borderBottom 1)
+
 export const StudentList: React.FC = () => {
-  const { filteredStudents, boardingRecords, studentStatuses, toggleBoarding, setStudentStatus, resetBoardingRecords, loading } = useApp();
+  const { filteredStudents, boardingRecords, studentStatuses, toggleBoarding, setStudentStatus, resetBoardingRecords, loading, selectedRoute, selectedDay } = useApp();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // 노선이나 요일이 변경되면 스크롤을 맨 위로
+  useEffect(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+  }, [selectedRoute, selectedDay]);
 
   const isBoarded = (studentId: string): boolean => {
     const record = boardingRecords.find((r) => r.studentId === studentId);
@@ -40,6 +48,57 @@ export const StudentList: React.FC = () => {
 
     return currentStudent.station !== previousStudent.station ||
            currentStudent.expectedTime !== previousStudent.expectedTime;
+  };
+
+  // 같은 정류장과 시간 그룹의 학생 수 계산
+  const getGroupSize = (currentIndex: number): number => {
+    const currentStudent = filteredStudents[currentIndex];
+    let count = 1;
+
+    // 같은 그룹의 이후 학생들 세기
+    for (let i = currentIndex + 1; i < filteredStudents.length; i++) {
+      const nextStudent = filteredStudents[i];
+      if (nextStudent.station === currentStudent.station &&
+          nextStudent.expectedTime === currentStudent.expectedTime) {
+        count++;
+      } else {
+        break;
+      }
+    }
+
+    return count;
+  };
+
+  // 그룹 내 모든 학생이 탑승했는지 확인
+  const isGroupBoarded = (currentIndex: number): boolean => {
+    const currentStudent = filteredStudents[currentIndex];
+
+    // 현재 학생이 탑승하지 않았으면 false
+    if (!isBoarded(currentStudent.id)) return false;
+
+    // 같은 그룹의 이후 학생들 확인
+    for (let i = currentIndex + 1; i < filteredStudents.length; i++) {
+      const nextStudent = filteredStudents[i];
+      if (nextStudent.station === currentStudent.station &&
+          nextStudent.expectedTime === currentStudent.expectedTime) {
+        if (!isBoarded(nextStudent.id)) return false;
+      } else {
+        break;
+      }
+    }
+
+    return true;
+  };
+
+  // 그룹의 마지막 학생인지 확인
+  const isLastInGroup = (currentIndex: number): boolean => {
+    if (currentIndex === filteredStudents.length - 1) return true;
+
+    const currentStudent = filteredStudents[currentIndex];
+    const nextStudent = filteredStudents[currentIndex + 1];
+
+    return currentStudent.station !== nextStudent.station ||
+           currentStudent.expectedTime !== nextStudent.expectedTime;
   };
 
   // 시간 포맷팅 함수 (시:분만 표시)
@@ -77,7 +136,7 @@ export const StudentList: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView ref={scrollViewRef} style={styles.scrollView}>
         {filteredStudents.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
@@ -85,62 +144,83 @@ export const StudentList: React.FC = () => {
             </Text>
           </View>
         ) : (
-          filteredStudents.map((student, index) => {
-            const boarded = isBoarded(student.id);
-            const isFirst = isFirstInGroup(index);
-            return (
-              <TouchableOpacity
-                key={student.id}
-                onPress={() => toggleBoarding(student.id)}
-                style={styles.studentRow}
-              >
-                {isFirst ? (
-                  <>
-                    <View style={[styles.timeCell, boarded && styles.cellBoarded]}>
-                      <Text style={[styles.timeText, boarded && styles.cellTextBoarded]}>
-                        {formatTime(student.expectedTime)}
-                      </Text>
-                    </View>
-                    <View style={[styles.stationCell, boarded && styles.cellBoarded]}>
+          <View>
+            {filteredStudents.map((student, index) => {
+              const boarded = isBoarded(student.id);
+              const isFirst = isFirstInGroup(index);
+              const isLast = isLastInGroup(index);
+              const groupSize = isFirst ? getGroupSize(index) : 0;
+              const mergedCellHeight = groupSize * ROW_HEIGHT;
+              const groupBoarded = isFirst ? isGroupBoarded(index) : false;
+
+              return (
+                <View
+                  key={student.id}
+                  style={[
+                    styles.studentRow,
+                    isLast && styles.studentRowBorder
+                  ]}
+                >
+                  {isFirst ? (
+                    <>
+                      <View style={[
+                        styles.timeCell,
+                        groupBoarded && styles.cellBoarded,
+                        { height: mergedCellHeight }
+                      ]}>
+                        <Text style={[styles.timeText, groupBoarded && styles.cellTextBoarded]}>
+                          {formatTime(student.expectedTime)}
+                        </Text>
+                      </View>
+                      <View style={[
+                        styles.stationCell,
+                        groupBoarded && styles.cellBoarded,
+                        { height: mergedCellHeight }
+                      ]}>
+                        <Text
+                          style={[styles.cellText, groupBoarded && styles.cellTextBoarded]}
+                          adjustsFontSizeToFit={true}
+                          numberOfLines={1}
+                        >
+                          {student.station}
+                        </Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.timeCellPlaceholder} />
+                      <View style={styles.stationCellPlaceholder} />
+                    </>
+                  )}
+                  <TouchableOpacity
+                    style={[
+                      styles.nameCell,
+                      boarded && styles.cellBoarded,
+                      !isLast && styles.nameCellWithBorder
+                    ]}
+                    onPress={() => toggleBoarding(student.id)}
+                    onLongPress={() => handleLongPress(student.id)}
+                    delayLongPress={500}
+                  >
+                    <View>
                       <Text
                         style={[styles.cellText, boarded && styles.cellTextBoarded]}
                         adjustsFontSizeToFit={true}
                         numberOfLines={1}
                       >
-                        {student.station}
+                        {student.name}
                       </Text>
+                      {getStudentStatus(student.id) && (
+                        <Text style={styles.statusText}>
+                          {getStudentStatus(student.id)}
+                        </Text>
+                      )}
                     </View>
-                  </>
-                ) : (
-                  <>
-                    <View style={[styles.timeCellEmpty, boarded && styles.cellBoarded]} />
-                    <View style={[styles.stationCellEmpty, boarded && styles.cellBoarded]} />
-                  </>
-                )}
-                <TouchableOpacity
-                  style={[styles.nameCell, boarded && styles.cellBoarded]}
-                  onPress={() => toggleBoarding(student.id)}
-                  onLongPress={() => handleLongPress(student.id)}
-                  delayLongPress={500}
-                >
-                  <View>
-                    <Text
-                      style={[styles.cellText, boarded && styles.cellTextBoarded]}
-                      adjustsFontSizeToFit={true}
-                      numberOfLines={1}
-                    >
-                      {student.name}
-                    </Text>
-                    {getStudentStatus(student.id) && (
-                      <Text style={styles.statusText}>
-                        {getStudentStatus(student.id)}
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              </TouchableOpacity>
-            );
-          })
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </View>
         )}
       </ScrollView>
 
@@ -231,6 +311,9 @@ const styles = StyleSheet.create({
   },
   studentRow: {
     flexDirection: 'row',
+    minHeight: 66,
+  },
+  studentRowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: '#000',
   },
@@ -244,18 +327,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
-  timeCellEmpty: {
+  timeCellPlaceholder: {
     width: 80,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    borderRightWidth: 1,
-    borderRightColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
   },
   stationCell: {
-    flex: 1,
+    width: 150,
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRightWidth: 1,
@@ -264,15 +340,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
-  stationCellEmpty: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRightWidth: 1,
-    borderRightColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
+  stationCellPlaceholder: {
+    width: 150,
   },
   nameCell: {
     flex: 1,
@@ -282,11 +351,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
+  nameCellWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+  },
   cellBoarded: {
     backgroundColor: '#90EE90',
   },
   timeText: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
   },

@@ -1,33 +1,40 @@
 /**
- * Cross-platform storage utility
- * Works on both React Native and Web
+ * Storage utility using localStorage
+ * Works on web and Expo web builds
  */
 
-let AsyncStorage: any;
-
-// Try to import AsyncStorage for React Native
-try {
-  AsyncStorage = require('@react-native-async-storage/async-storage').default;
-} catch (e) {
-  // Fallback to localStorage for web
-  AsyncStorage = {
-    getItem: async (key: string) => {
+const storage = {
+  getItem: async (key: string): Promise<string | null> => {
+    try {
       if (typeof window !== 'undefined' && window.localStorage) {
         return window.localStorage.getItem(key);
       }
       return null;
-    },
-    setItem: async (key: string, value: string) => {
+    } catch (e) {
+      console.error('localStorage error:', e);
+      return null;
+    }
+  },
+
+  setItem: async (key: string, value: string): Promise<void> => {
+    try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem(key, value);
       }
-    },
-    removeItem: async (key: string) => {
+    } catch (e) {
+      console.error('localStorage error:', e);
+    }
+  },
+
+  removeItem: async (key: string): Promise<void> => {
+    try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(key);
       }
-    },
-  };
-}
+    } catch (e) {
+      console.error('localStorage error:', e);
+    }
+  },
+};
 
-export default AsyncStorage;
+export default storage;

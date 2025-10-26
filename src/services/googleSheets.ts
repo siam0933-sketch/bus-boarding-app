@@ -1,5 +1,5 @@
 import { Student, DayOfWeek } from '../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../utils/storage';
 
 /**
  * Google Sheets API 연동 서비스

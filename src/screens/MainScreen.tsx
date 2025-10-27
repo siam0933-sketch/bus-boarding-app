@@ -9,11 +9,24 @@ export const MainScreen: React.FC = () => {
   const [memo, setMemo] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  const handleEditToggle = () => {
+    setIsEditMode(!isEditMode);
+  };
 
   return (
     <View style={styles.container}>
       {/* 제목 */}
       <View style={styles.titleContainer}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={handleEditToggle}
+        >
+          <Text style={styles.editButtonText}>
+            {isEditMode ? '완료' : '추가삭제'}
+          </Text>
+        </TouchableOpacity>
         <Text style={styles.titleText}>탑승관리</Text>
         <TouchableOpacity
           style={styles.settingsButton}
@@ -53,7 +66,7 @@ export const MainScreen: React.FC = () => {
       </View>
 
       {/* 학생 목록 */}
-      <StudentList />
+      <StudentList isEditMode={isEditMode} />
 
       {/* 설정 모달 */}
       <Modal
@@ -87,6 +100,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#000',
+  },
+  editButton: {
+    position: 'absolute',
+    left: 16,
+    padding: 4,
+  },
+  editButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2196F3',
   },
   settingsButton: {
     position: 'absolute',

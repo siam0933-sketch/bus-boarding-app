@@ -1,18 +1,138 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Modal } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Modal, TextInput, Alert } from 'react-native';
 import { Button, ActivityIndicator } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
+import { Student } from '../types';
+import { addStudentToSheet, removeStudentFromSheet, updateStudentInSheet } from '../services/sheetsWebhook';
 
-export const StudentList: React.FC = () => {
-  const { filteredStudents, boardingRecords, studentStatuses, toggleBoarding, setStudentStatus, resetBoardingRecords, loading, selectedRoute, selectedDay } = useApp();
+interface StudentListProps {
+  isEditMode: boolean;
+}
+
+export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
+  const { filteredStudents, boardingRecords, studentStatuses, toggleBoarding, setStudentStatus, resetBoardingRecords, loading, selectedRoute, selectedDay, addStudent, removeStudent, updateStudent, refreshStudents } = useApp();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // 편집 모드용 로컬 학생 데이터
+  const [editableStudents, setEditableStudents] = useState<Student[]>([]);
+  const [originalStudents, setOriginalStudents] = useState<Student[]>([]);
+  const prevEditMode = useRef(isEditMode);
 
   // 노선이나 요일이 변경되면 스크롤을 맨 위로
   useEffect(() => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }, [selectedRoute, selectedDay]);
+
+  // 편집 모드 진입 시 로컬 데이터 초기화
+  useEffect(() => {
+    if (isEditMode && !prevEditMode.current) {
+      // 편집 모드 진입
+      setEditableStudents([...filteredStudents]);
+      setOriginalStudents([...filteredStudents]);
+    } else if (!isEditMode && prevEditMode.current) {
+      // 편집 모드 종료 - 저장 처리
+      saveEditedStudents();
+    }
+    prevEditMode.current = isEditMode;
+  }, [isEditMode]);
+
+  // 편집된 학생 데이터 저장
+  const saveEditedStudents = async () => {
+    try {
+      // 빈 학생 (이름이 없는 행) 제거
+      const validStudents = editableStudents.filter(s => s.name.trim() !== '');
+
+      // 삭제된 학생 찾기 (원본에는 있지만 편집본에는 없는 학생)
+      const deletedStudents = originalStudents.filter(
+        original => !validStudents.some(edited => edited.id === original.id)
+      );
+
+      // 추가된 학생 찾기 (temp- ID를 가진 학생)
+      const addedStudents = validStudents.filter(s => s.id.startsWith('temp-'));
+
+      // 수정된 학생 찾기 (ID는 같지만 내용이 다른 학생)
+      const updatedStudents = validStudents.filter(edited => {
+        if (edited.id.startsWith('temp-')) return false;
+        const original = originalStudents.find(o => o.id === edited.id);
+        if (!original) return false;
+        return original.name !== edited.name ||
+               original.station !== edited.station ||
+               original.expectedTime !== edited.expectedTime;
+      });
+
+      // Google Sheets 업데이트
+      let messages: string[] = [];
+
+      // 삭제 처리
+      for (const student of deletedStudents) {
+        try {
+          await removeStudentFromSheet(student.name, student.route, selectedDay);
+          removeStudent(student.name, student.route, selectedDay);
+          messages.push(`${student.name} 삭제`);
+        } catch (e: any) {
+          console.error('Delete failed:', e);
+          messages.push(`${student.name} 삭제 실패`);
+        }
+      }
+
+      // 추가 처리
+      for (const student of addedStudents) {
+        try {
+          await addStudentToSheet(
+            student.name,
+            student.route,
+            student.station,
+            student.expectedTime,
+            selectedDay
+          );
+          addStudent({
+            name: student.name,
+            route: student.route,
+            station: student.station,
+            expectedTime: student.expectedTime,
+            days: [selectedDay],
+            grade: '',
+            contact: '',
+          });
+          messages.push(`${student.name} 추가`);
+        } catch (e: any) {
+          console.error('Add failed:', e);
+          messages.push(`${student.name} 추가 실패`);
+        }
+      }
+
+      // 수정 처리
+      for (const student of updatedStudents) {
+        try {
+          await updateStudentInSheet(student.name, {
+            station: student.station,
+            time: student.expectedTime,
+            route: student.route,
+            day: selectedDay,
+          });
+          updateStudent(student.name, {
+            station: student.station,
+            expectedTime: student.expectedTime,
+            route: student.route,
+          });
+          messages.push(`${student.name} 수정`);
+        } catch (e: any) {
+          console.error('Update failed:', e);
+          messages.push(`${student.name} 수정 실패`);
+        }
+      }
+
+      if (messages.length > 0) {
+        Alert.alert('변경 완료', messages.join('\n'));
+        // Google Sheets에서 최신 데이터 다시 로드
+        await refreshStudents();
+      }
+    } catch (error: any) {
+      Alert.alert('오류', error.message || '저장 중 오류가 발생했습니다.');
+    }
+  };
 
   const isBoarded = (studentId: string): boolean => {
     const record = boardingRecords.find((r) => r.studentId === studentId);
@@ -61,6 +181,33 @@ export const StudentList: React.FC = () => {
     return time;
   };
 
+  // 편집 모드: + 버튼 클릭 시 빈 행 추가
+  const handleAddStudent = (index: number) => {
+    const newStudent: Student = {
+      id: `temp-${Date.now()}`,
+      name: '',
+      station: '',
+      expectedTime: '',
+      route: selectedRoute,
+      days: [selectedDay],
+      grade: '',
+      contact: '',
+    };
+    const newStudents = [...editableStudents];
+    newStudents.splice(index + 1, 0, newStudent);
+    setEditableStudents(newStudents);
+  };
+
+  // 편집 모드: 학생 정보 수정
+  const handleStudentChange = (index: number, field: keyof Student, value: string) => {
+    const newStudents = [...editableStudents];
+    newStudents[index] = {
+      ...newStudents[index],
+      [field]: value,
+    };
+    setEditableStudents(newStudents);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -70,6 +217,65 @@ export const StudentList: React.FC = () => {
     );
   }
 
+  // 편집 모드 렌더링
+  if (isEditMode) {
+    return (
+      <View style={styles.container}>
+        <ScrollView ref={scrollViewRef} style={styles.scrollView}>
+          {editableStudents.length === 0 && (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => handleAddStudent(-1)}
+            >
+              <Text style={styles.addButtonText}>+ 학생 추가</Text>
+            </TouchableOpacity>
+          )}
+          {editableStudents.map((student, index) => (
+            <View key={student.id}>
+              <View style={styles.studentRow}>
+                <View style={styles.timeCell}>
+                  <TextInput
+                    style={styles.editInput}
+                    value={student.expectedTime}
+                    onChangeText={(value) => handleStudentChange(index, 'expectedTime', value)}
+                    placeholder="시간"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.stationCell}>
+                  <TextInput
+                    style={styles.editInput}
+                    value={student.station}
+                    onChangeText={(value) => handleStudentChange(index, 'station', value)}
+                    placeholder="정류장"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.nameCell}>
+                  <TextInput
+                    style={styles.editInput}
+                    value={student.name}
+                    onChangeText={(value) => handleStudentChange(index, 'name', value)}
+                    placeholder="이름"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              </View>
+              {/* + 버튼 */}
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => handleAddStudent(index)}
+              >
+                <Text style={styles.addButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // 일반 모드 렌더링
   return (
     <View style={styles.container}>
       <ScrollView ref={scrollViewRef} style={styles.scrollView}>
@@ -315,5 +521,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+  },
+  editInput: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    padding: 0,
+    width: '100%',
+  },
+  addButton: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2196F3',
   },
 });

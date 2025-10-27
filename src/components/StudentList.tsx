@@ -160,12 +160,26 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
     setMenuVisible(true);
   };
 
-  const handleStatusSelect = (status: '결석' | '변경' | '직접') => {
+  const handleStatusSelect = (status: '결석' | '시간변경' | '직접등원') => {
     if (selectedStudentId) {
       setStudentStatus(selectedStudentId, status);
     }
     setMenuVisible(false);
     setSelectedStudentId(null);
+  };
+
+  // 상태별 색상 가져오기
+  const getStatusColor = (status: string | null): string => {
+    switch (status) {
+      case '결석':
+        return '#FFB3BA'; // 핑크 파스텔
+      case '시간변경':
+        return '#FFFFBA'; // 옐로우 파스텔
+      case '직접등원':
+        return '#BAE1FF'; // 블루 파스텔
+      default:
+        return '#ffffff';
+    }
   };
 
   // 시간 포맷팅 함수 (시:분만 표시)
@@ -299,18 +313,29 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
         ) : (
           filteredStudents.map((student) => {
             const boarded = isBoarded(student.id);
+            const status = getStudentStatus(student.id);
+            const statusColor = status ? getStatusColor(status) : null;
+
             return (
               <TouchableOpacity
                 key={student.id}
                 onPress={() => toggleBoarding(student.id)}
                 style={styles.studentRow}
               >
-                <View style={[styles.timeCell, boarded && styles.cellBoarded]}>
+                <View style={[
+                  styles.timeCell,
+                  boarded && styles.cellBoarded,
+                  statusColor && { backgroundColor: statusColor }
+                ]}>
                   <Text style={[styles.timeText, boarded && styles.cellTextBoarded]}>
                     {formatTime(student.expectedTime)}
                   </Text>
                 </View>
-                <View style={[styles.stationCell, boarded && styles.cellBoarded]}>
+                <View style={[
+                  styles.stationCell,
+                  boarded && styles.cellBoarded,
+                  statusColor && { backgroundColor: statusColor }
+                ]}>
                   <Text
                     style={[styles.cellText, boarded && styles.cellTextBoarded]}
                     adjustsFontSizeToFit={true}
@@ -320,7 +345,11 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  style={[styles.nameCell, boarded && styles.cellBoarded]}
+                  style={[
+                    styles.nameCell,
+                    boarded && styles.cellBoarded,
+                    statusColor && { backgroundColor: statusColor }
+                  ]}
                   onPress={() => toggleBoarding(student.id)}
                   onLongPress={() => handleLongPress(student.id)}
                   delayLongPress={500}
@@ -333,9 +362,9 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
                     >
                       {student.name}
                     </Text>
-                    {getStudentStatus(student.id) && (
+                    {status && (
                       <Text style={styles.statusText}>
-                        {getStudentStatus(student.id)}
+                        {status}
                       </Text>
                     )}
                   </View>
@@ -368,16 +397,16 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
             <View style={styles.menuDivider} />
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => handleStatusSelect('변경')}
+              onPress={() => handleStatusSelect('시간변경')}
             >
-              <Text style={styles.menuItemText}>변경</Text>
+              <Text style={styles.menuItemText}>시간변경</Text>
             </TouchableOpacity>
             <View style={styles.menuDivider} />
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => handleStatusSelect('직접')}
+              onPress={() => handleStatusSelect('직접등원')}
             >
-              <Text style={styles.menuItemText}>직접</Text>
+              <Text style={styles.menuItemText}>직접등원</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>

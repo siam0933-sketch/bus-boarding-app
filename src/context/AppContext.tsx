@@ -4,7 +4,7 @@ import { fetchAllStudents } from '../services/googleSheets';
 
 interface StudentStatus {
   studentId: string;
-  status: '결석' | '변경' | '직접';
+  status: '결석' | '시간변경' | '직접등원';
 }
 
 interface AppContextType {
@@ -16,7 +16,7 @@ interface AppContextType {
   setSelectedDay: (day: DayOfWeek) => void;
   setSelectedRoute: (routeId: string) => void;
   toggleBoarding: (studentId: string) => void;
-  setStudentStatus: (studentId: string, status: '결석' | '변경' | '직접') => void;
+  setStudentStatus: (studentId: string, status: '결석' | '시간변경' | '직접등원') => void;
   resetBoardingRecords: () => void;
   filteredStudents: Student[];
   routes: Route[];

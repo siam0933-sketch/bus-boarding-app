@@ -62,18 +62,25 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
                original.expectedTime !== edited.expectedTime;
       });
 
+      // 변경사항이 없으면 알림 후 종료
+      if (deletedStudents.length === 0 && addedStudents.length === 0 && updatedStudents.length === 0) {
+        Alert.alert('알림', '변경된 내용이 없습니다.');
+        return;
+      }
+
       // Google Sheets 업데이트
       let messages: string[] = [];
+      let errors: string[] = [];
 
       // 삭제 처리
       for (const student of deletedStudents) {
         try {
           await removeStudentFromSheet(student.name, student.route, selectedDay);
           removeStudent(student.name, student.route, selectedDay);
-          messages.push(`${student.name} 삭제`);
+          messages.push(`✓ ${student.name} 삭제`);
         } catch (e: any) {
           console.error('Delete failed:', e);
-          messages.push(`${student.name} 삭제 실패`);
+          errors.push(`✗ ${student.name} 삭제 실패: ${e.message}`);
         }
       }
 
@@ -96,10 +103,10 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
             grade: '',
             contact: '',
           });
-          messages.push(`${student.name} 추가`);
+          messages.push(`✓ ${student.name} 추가`);
         } catch (e: any) {
           console.error('Add failed:', e);
-          messages.push(`${student.name} 추가 실패`);
+          errors.push(`✗ ${student.name} 추가 실패: ${e.message}`);
         }
       }
 
@@ -117,20 +124,24 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
             expectedTime: student.expectedTime,
             route: student.route,
           });
-          messages.push(`${student.name} 수정`);
+          messages.push(`✓ ${student.name} 수정`);
         } catch (e: any) {
           console.error('Update failed:', e);
-          messages.push(`${student.name} 수정 실패`);
+          errors.push(`✗ ${student.name} 수정 실패: ${e.message}`);
         }
       }
 
-      if (messages.length > 0) {
-        Alert.alert('변경 완료', messages.join('\n'));
+      // 결과 표시
+      const allMessages = [...messages, ...errors];
+      if (allMessages.length > 0) {
+        const title = errors.length > 0 ? '변경 완료 (일부 오류)' : '변경 완료';
+        Alert.alert(title, allMessages.join('\n'));
         // Google Sheets에서 최신 데이터 다시 로드
         await refreshStudents();
       }
     } catch (error: any) {
-      Alert.alert('오류', error.message || '저장 중 오류가 발생했습니다.');
+      console.error('Save error:', error);
+      Alert.alert('오류', `저장 중 오류가 발생했습니다:\n${error.message}`);
     }
   };
 

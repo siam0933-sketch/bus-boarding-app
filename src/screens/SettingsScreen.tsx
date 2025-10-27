@@ -10,6 +10,7 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
   const [sheetUrl, setSheetUrl] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     loadSettings();
@@ -47,16 +48,19 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
 
   const saveWebhook = async () => {
     if (!webhookUrl.trim()) {
-      Alert.alert('오류', 'Apps Script 웹훅 URL을 입력해주세요.');
+      setSaveMessage('❌ Apps Script 웹훅 URL을 입력해주세요.');
+      setTimeout(() => setSaveMessage(''), 3000);
       return;
     }
 
     try {
       await saveWebhookUrl(webhookUrl.trim());
-      Alert.alert('성공', '웹훅 URL이 저장되었습니다.');
+      setSaveMessage('✅ 웹훅 URL이 저장되었습니다!');
+      setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
       console.error('Failed to save webhook URL:', error);
-      Alert.alert('오류', '웹훅 URL 저장에 실패했습니다.');
+      setSaveMessage('❌ 웹훅 URL 저장에 실패했습니다.');
+      setTimeout(() => setSaveMessage(''), 3000);
     }
   };
 
@@ -118,6 +122,12 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
             <TouchableOpacity style={styles.saveButton} onPress={saveWebhook}>
               <Text style={styles.saveButtonText}>웹훅 URL 저장</Text>
             </TouchableOpacity>
+
+            {saveMessage !== '' && (
+              <View style={styles.saveMessageBox}>
+                <Text style={styles.saveMessageText}>{saveMessage}</Text>
+              </View>
+            )}
 
             <View style={styles.infoBox}>
               <Text style={styles.infoTitle}>💡 웹훅 설정 방법</Text>
@@ -201,12 +211,26 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 4,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   saveButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  saveMessageBox: {
+    backgroundColor: '#e8f5e9',
+    padding: 12,
+    borderRadius: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  saveMessageText: {
+    fontSize: 14,
+    color: '#2e7d32',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   infoBox: {
     backgroundColor: '#f5f5f5',

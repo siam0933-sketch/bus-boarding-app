@@ -7,9 +7,10 @@ import { addStudentToSheet, removeStudentFromSheet, updateStudentInSheet, update
 
 interface StudentListProps {
   isEditMode: boolean;
+  onEditComplete?: () => void;
 }
 
-export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
+export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onEditComplete }) => {
   const { filteredStudents, boardingRecords, studentStatuses, toggleBoarding, setStudentStatus, resetBoardingRecords, loading, selectedRoute, selectedDay, addStudent, removeStudent, updateStudent, refreshStudents } = useApp();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -20,6 +21,15 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
   const [originalStudents, setOriginalStudents] = useState<Student[]>([]);
   const prevEditMode = useRef(isEditMode);
 
+  // 최신 상태를 항상 참조하기 위한 ref
+  const editableStudentsRef = useRef<Student[]>(editableStudents);
+  const originalStudentsRef = useRef<Student[]>(originalStudents);
+
+  useEffect(() => {
+    editableStudentsRef.current = editableStudents;
+    originalStudentsRef.current = originalStudents;
+  }, [editableStudents, originalStudents]);
+
   // 노선이나 요일이 변경되면 스크롤을 맨 위로
   useEffect(() => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
@@ -29,23 +39,35 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
   useEffect(() => {
     if (isEditMode && !prevEditMode.current) {
       // 편집 모드 진입
+      console.log('Edit mode entered');
       setEditableStudents([...filteredStudents]);
       setOriginalStudents([...filteredStudents]);
-    } else if (!isEditMode && prevEditMode.current) {
-      // 편집 모드 종료 - 저장 처리
-      saveEditedStudents();
     }
     prevEditMode.current = isEditMode;
+  }, [isEditMode, filteredStudents]);
+
+  // 편집 모드 종료 시 저장
+  useEffect(() => {
+    if (!isEditMode && prevEditMode.current === true) {
+      console.log('Edit mode exited, saving...');
+      saveEditedStudents();
+    }
   }, [isEditMode]);
 
   // 편집된 학생 데이터 저장
   const saveEditedStudents = async () => {
     try {
+      // ref에서 최신 데이터 가져오기
+      const currentEditableStudents = editableStudentsRef.current;
+      const currentOriginalStudents = originalStudentsRef.current;
+
+      console.log('Saving students:', currentEditableStudents.length);
+
       // 빈 학생 (이름이 없는 행) 제거
-      const validStudents = editableStudents.filter(s => s.name.trim() !== '');
+      const validStudents = currentEditableStudents.filter(s => s.name.trim() !== '');
 
       // 삭제된 학생 찾기 (원본에는 있지만 편집본에는 없는 학생)
-      const deletedStudents = originalStudents.filter(
+      const deletedStudents = currentOriginalStudents.filter(
         original => !validStudents.some(edited => edited.id === original.id)
       );
 
@@ -55,7 +77,7 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
       // 수정된 학생 찾기 (ID는 같지만 내용이 다른 학생)
       const updatedStudents = validStudents.filter(edited => {
         if (edited.id.startsWith('temp-')) return false;
-        const original = originalStudents.find(o => o.id === edited.id);
+        const original = currentOriginalStudents.find(o => o.id === edited.id);
         if (!original) return false;
         return original.name !== edited.name ||
                original.station !== edited.station ||

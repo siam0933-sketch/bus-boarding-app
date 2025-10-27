@@ -8,7 +8,7 @@ import AsyncStorage from '../utils/storage';
 const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
 
 // 기본 웹훅 URL (보안 주의: GitHub에 공개됨)
-const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwjbgJu01HY6XeEDY3pp5J9CGD2SD1XXKxtTCgyhNVuVYZlbVFIckcofc0KEkwYGISk/exec';
+const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbz-Qt-JiS3sIkcOpLlENk-WsRHzWpz29PANdyvRNwCUtNPiMvKCCXLA2NdKR-kgkBFr/exec';
 
 /**
  * 저장된 웹훅 URL 가져오기

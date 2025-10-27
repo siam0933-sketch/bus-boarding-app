@@ -125,3 +125,21 @@ export const updateStudentInSheet = async (
 
   return result.message || '학생 정보가 수정되었습니다.';
 };
+
+/**
+ * 학생 상태 업데이트 (결석, 시간변경, 직접등원)
+ */
+export const updateStudentStatus = async (
+  studentName: string,
+  status: string | null,
+  day: string
+): Promise<string> => {
+  const result = await callWebhook({
+    action: 'updateStatus',
+    studentName,
+    status: status || '',
+    day,
+  });
+
+  return result.message || '학생 상태가 업데이트되었습니다.';
+};

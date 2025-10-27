@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Modal, TextInput,
 import { Button, ActivityIndicator } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
 import { Student } from '../types';
-import { addStudentToSheet, removeStudentFromSheet, updateStudentInSheet } from '../services/sheetsWebhook';
+import { addStudentToSheet, removeStudentFromSheet, updateStudentInSheet, updateStudentStatus } from '../services/sheetsWebhook';
 
 interface StudentListProps {
   isEditMode: boolean;
@@ -160,9 +160,22 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
     setMenuVisible(true);
   };
 
-  const handleStatusSelect = (status: '결석' | '시간변경' | '직접등원') => {
+  const handleStatusSelect = async (status: '결석' | '시간변경' | '직접등원') => {
     if (selectedStudentId) {
+      // 앱 상태 업데이트
       setStudentStatus(selectedStudentId, status);
+
+      // 학생 이름 찾기
+      const student = filteredStudents.find(s => s.id === selectedStudentId);
+      if (student) {
+        try {
+          // Google Sheets 즉시 업데이트
+          await updateStudentStatus(student.name, status, selectedDay);
+        } catch (error: any) {
+          console.error('Status update failed:', error);
+          Alert.alert('오류', `상태 업데이트 실패: ${error.message}`);
+        }
+      }
     }
     setMenuVisible(false);
     setSelectedStudentId(null);

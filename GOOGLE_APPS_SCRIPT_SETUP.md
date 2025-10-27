@@ -34,6 +34,9 @@ function doPost(e) {
       case 'update':
         result = updateStudent(sheet, data);
         break;
+      case 'updateStatus':
+        result = updateStudentStatus(sheet, data);
+        break;
       default:
         throw new Error('Unknown action: ' + data.action);
     }
@@ -140,6 +143,53 @@ function updateStudent(sheet, data) {
 
   if (updated) {
     return `${studentName} 학생의 정보를 수정했습니다.`;
+  } else {
+    return `${studentName} 학생을 찾을 수 없습니다.`;
+  }
+}
+
+/**
+ * 학생 상태 업데이트
+ */
+function updateStudentStatus(sheet, data) {
+  const { studentName, status, day } = data;
+
+  const dayColumnMap = {
+    '월': 1, '화': 5, '수': 9, '목': 13, '금': 17
+  };
+
+  const baseCol = dayColumnMap[day] || 1;
+  const nameCol = baseCol + 3; // 이름 컬럼
+  const lastRow = sheet.getLastRow();
+  let updated = false;
+
+  for (let row = 2; row <= lastRow; row++) {
+    const cellValue = sheet.getRange(row, nameCol).getValue();
+
+    // 기존 이름에서 상태 제거 (괄호 안의 내용 제거)
+    const baseName = cellValue.replace(/\s*\([^)]*\)\s*$/g, '').trim();
+
+    if (baseName === studentName) {
+      let newValue;
+      if (status && status !== '') {
+        // 상태가 있으면 이름 뒤에 추가
+        newValue = `${baseName}\n(${status})`;
+      } else {
+        // 상태가 없으면 이름만
+        newValue = baseName;
+      }
+
+      sheet.getRange(row, nameCol).setValue(newValue);
+      updated = true;
+    }
+  }
+
+  if (updated) {
+    if (status && status !== '') {
+      return `${studentName} 학생의 상태를 (${status})로 변경했습니다.`;
+    } else {
+      return `${studentName} 학생의 상태를 초기화했습니다.`;
+    }
   } else {
     return `${studentName} 학생을 찾을 수 없습니다.`;
   }

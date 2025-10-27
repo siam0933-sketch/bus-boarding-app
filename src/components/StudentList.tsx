@@ -7,10 +7,10 @@ import { addStudentToSheet, removeStudentFromSheet, updateStudentInSheet, update
 
 interface StudentListProps {
   isEditMode: boolean;
-  onEditComplete?: () => void;
+  onSaveEdit?: () => Promise<void>;
 }
 
-export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onEditComplete }) => {
+export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onSaveEdit }) => {
   const { filteredStudents, boardingRecords, studentStatuses, toggleBoarding, setStudentStatus, resetBoardingRecords, loading, selectedRoute, selectedDay, addStudent, removeStudent, updateStudent, refreshStudents } = useApp();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -35,24 +35,24 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onEditComp
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }, [selectedRoute, selectedDay]);
 
-  // 편집 모드 진입 시 로컬 데이터 초기화
+  // 편집 모드 진입/종료 처리
   useEffect(() => {
-    if (isEditMode && !prevEditMode.current) {
+    const wasPreviouslyInEditMode = prevEditMode.current;
+
+    if (isEditMode && !wasPreviouslyInEditMode) {
       // 편집 모드 진입
       console.log('Edit mode entered');
       setEditableStudents([...filteredStudents]);
       setOriginalStudents([...filteredStudents]);
-    }
-    prevEditMode.current = isEditMode;
-  }, [isEditMode, filteredStudents]);
-
-  // 편집 모드 종료 시 저장
-  useEffect(() => {
-    if (!isEditMode && prevEditMode.current === true) {
+    } else if (!isEditMode && wasPreviouslyInEditMode) {
+      // 편집 모드 종료 - 저장
       console.log('Edit mode exited, saving...');
       saveEditedStudents();
     }
-  }, [isEditMode]);
+
+    // prevEditMode 업데이트는 마지막에
+    prevEditMode.current = isEditMode;
+  }, [isEditMode, filteredStudents]);
 
   // 편집된 학생 데이터 저장
   const saveEditedStudents = async () => {

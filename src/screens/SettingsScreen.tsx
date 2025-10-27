@@ -4,13 +4,16 @@ import AsyncStorage from '../utils/storage';
 import { executeAICommand, AIAction } from '../services/gemini';
 import { useApp } from '../context/AppContext';
 import { DayOfWeek } from '../types';
+import { saveWebhookUrl, addStudentToSheet, removeStudentFromSheet, updateStudentInSheet } from '../services/sheetsWebhook';
 
 const SHEET_URL_KEY = '@sheet_url';
 const GEMINI_API_KEY = '@gemini_api_key';
+const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
 
 export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { addStudent, removeStudent, updateStudent } = useApp();
   const [sheetUrl, setSheetUrl] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [aiCommand, setAiCommand] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -23,8 +26,10 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
   const loadSettings = async () => {
     try {
       const url = await AsyncStorage.getItem(SHEET_URL_KEY);
+      const webhook = await AsyncStorage.getItem(WEBHOOK_URL_KEY);
       const key = await AsyncStorage.getItem(GEMINI_API_KEY);
       if (url) setSheetUrl(url);
+      if (webhook) setWebhookUrl(webhook);
       if (key) setApiKey(key);
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -65,6 +70,21 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
     }
   };
 
+  const saveWebhook = async () => {
+    if (!webhookUrl.trim()) {
+      Alert.alert('오류', 'Apps Script 웹훅 URL을 입력해주세요.');
+      return;
+    }
+
+    try {
+      await saveWebhookUrl(webhookUrl.trim());
+      Alert.alert('성공', '웹훅 URL이 저장되었습니다.');
+    } catch (error) {
+      console.error('Failed to save webhook URL:', error);
+      Alert.alert('오류', '웹훅 URL 저장에 실패했습니다.');
+    }
+  };
+
   const handleAICommand = async () => {
     if (!aiCommand.trim()) {
       Alert.alert('오류', '명령을 입력해주세요.');
@@ -81,9 +101,12 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
       const action = await executeAICommand(aiCommand, apiKey);
 
       // Execute the action based on type
+      let sheetMessage = '';
+
       switch (action.action) {
         case 'add':
           if (action.studentName && action.route) {
+            // 앱 상태 업데이트
             addStudent({
               name: action.studentName,
               route: action.route,
@@ -93,27 +116,68 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
               grade: '',
               contact: '',
             });
+
+            // Google Sheets 업데이트
+            try {
+              sheetMessage = await addStudentToSheet(
+                action.studentName,
+                action.route,
+                action.station || '',
+                action.time || '',
+                action.day || '월'
+              );
+            } catch (e: any) {
+              console.error('Sheet update failed:', e);
+              sheetMessage = '\n\n⚠️ Google Sheets 업데이트 실패: ' + e.message;
+            }
           }
           break;
 
         case 'remove':
           if (action.studentName) {
+            // 앱 상태 업데이트
             removeStudent(action.studentName, action.route, action.day as DayOfWeek);
+
+            // Google Sheets 업데이트
+            try {
+              sheetMessage = await removeStudentFromSheet(
+                action.studentName,
+                action.route,
+                action.day
+              );
+            } catch (e: any) {
+              console.error('Sheet update failed:', e);
+              sheetMessage = '\n\n⚠️ Google Sheets 업데이트 실패: ' + e.message;
+            }
           }
           break;
 
         case 'update':
           if (action.studentName) {
+            // 앱 상태 업데이트
             const updates: any = {};
             if (action.station) updates.station = action.station;
             if (action.time) updates.expectedTime = action.time;
             if (action.route) updates.route = action.route;
             updateStudent(action.studentName, updates);
+
+            // Google Sheets 업데이트
+            try {
+              sheetMessage = await updateStudentInSheet(action.studentName, {
+                station: action.station,
+                time: action.time,
+                route: action.route,
+                day: action.day,
+              });
+            } catch (e: any) {
+              console.error('Sheet update failed:', e);
+              sheetMessage = '\n\n⚠️ Google Sheets 업데이트 실패: ' + e.message;
+            }
           }
           break;
       }
 
-      Alert.alert('성공', action.message || '명령이 실행되었습니다.');
+      Alert.alert('성공', (action.message || '명령이 실행되었습니다.') + sheetMessage);
       setAiCommand('');
     } catch (error: any) {
       Alert.alert('오류', error.message || 'AI 명령 실행에 실패했습니다.');
@@ -144,7 +208,8 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
           {/* Google Sheets URL 섹션 */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>📊 Google Sheets 연결</Text>
-            <Text style={styles.label}>Google Sheets URL</Text>
+
+            <Text style={styles.label}>Google Sheets URL (읽기용)</Text>
             <Text style={styles.description}>
               공유된 Google Sheets의 URL을 입력하세요
             </Text>
@@ -161,6 +226,31 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
             <TouchableOpacity style={styles.saveButton} onPress={saveSheetUrl}>
               <Text style={styles.saveButtonText}>저장</Text>
             </TouchableOpacity>
+
+            <Text style={[styles.label, {marginTop: 16}]}>Apps Script 웹훅 URL (쓰기용)</Text>
+            <Text style={styles.description}>
+              Google Sheets에 데이터를 추가/수정하려면 웹훅 URL이 필요합니다
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={webhookUrl}
+              onChangeText={setWebhookUrl}
+              placeholder="https://script.google.com/macros/s/..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={saveWebhook}>
+              <Text style={styles.saveButtonText}>웹훅 URL 저장</Text>
+            </TouchableOpacity>
+
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>💡 웹훅 설정 방법</Text>
+              <Text style={styles.infoText}>
+                자세한 설정 방법은 GOOGLE_APPS_SCRIPT_SETUP.md 파일을 참고하세요
+              </Text>
+            </View>
           </View>
 
           {/* Gemini API 키 섹션 */}

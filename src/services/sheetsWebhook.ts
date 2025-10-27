@@ -1,0 +1,126 @@
+/**
+ * Google Apps Script 웹훅 서비스
+ * Google Sheets에 데이터를 추가/수정/삭제합니다
+ */
+
+import AsyncStorage from '../utils/storage';
+
+const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
+
+/**
+ * 저장된 웹훅 URL 가져오기
+ */
+export const getWebhookUrl = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem(WEBHOOK_URL_KEY);
+  } catch (error) {
+    console.error('Failed to get webhook URL:', error);
+    return null;
+  }
+};
+
+/**
+ * 웹훅 URL 저장
+ */
+export const saveWebhookUrl = async (url: string): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(WEBHOOK_URL_KEY, url);
+  } catch (error) {
+    console.error('Failed to save webhook URL:', error);
+    throw error;
+  }
+};
+
+/**
+ * 웹훅 호출
+ */
+const callWebhook = async (data: any): Promise<any> => {
+  const webhookUrl = await getWebhookUrl();
+
+  if (!webhookUrl) {
+    throw new Error('Apps Script 웹훅 URL이 설정되지 않았습니다.\n설정 화면에서 URL을 입력해주세요.');
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      redirect: 'follow',
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Google Sheets 업데이트 실패');
+    }
+
+    return result;
+  } catch (error: any) {
+    console.error('Webhook call failed:', error);
+    throw new Error(error.message || 'Google Sheets 업데이트 실패');
+  }
+};
+
+/**
+ * 학생 추가
+ */
+export const addStudentToSheet = async (
+  studentName: string,
+  route: string,
+  station: string,
+  time: string,
+  day: string
+): Promise<string> => {
+  const result = await callWebhook({
+    action: 'add',
+    studentName,
+    route,
+    station,
+    time,
+    day,
+  });
+
+  return result.message || '학생이 추가되었습니다.';
+};
+
+/**
+ * 학생 제거
+ */
+export const removeStudentFromSheet = async (
+  studentName: string,
+  route?: string,
+  day?: string
+): Promise<string> => {
+  const result = await callWebhook({
+    action: 'remove',
+    studentName,
+    route,
+    day,
+  });
+
+  return result.message || '학생이 제거되었습니다.';
+};
+
+/**
+ * 학생 정보 수정
+ */
+export const updateStudentInSheet = async (
+  studentName: string,
+  updates: {
+    station?: string;
+    time?: string;
+    route?: string;
+    day?: string;
+  }
+): Promise<string> => {
+  const result = await callWebhook({
+    action: 'update',
+    studentName,
+    ...updates,
+  });
+
+  return result.message || '학생 정보가 수정되었습니다.';
+};

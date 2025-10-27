@@ -10,6 +10,9 @@ const SHEET_URL_KEY = '@sheet_url';
 const GEMINI_API_KEY = '@gemini_api_key';
 const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
 
+// 기본 Gemini API 키 (보안 주의: GitHub에 공개됨)
+const DEFAULT_GEMINI_API_KEY = 'AIzaSyA-yzK7N_GW8tLCFr3omoQsp9EIoFsjuHY';
+
 export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { addStudent, removeStudent, updateStudent } = useApp();
   const [sheetUrl, setSheetUrl] = useState('');
@@ -30,7 +33,8 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
       const key = await AsyncStorage.getItem(GEMINI_API_KEY);
       if (url) setSheetUrl(url);
       if (webhook) setWebhookUrl(webhook);
-      if (key) setApiKey(key);
+      // 저장된 키가 없으면 기본 API 키 사용
+      setApiKey(key || DEFAULT_GEMINI_API_KEY);
     } catch (error) {
       console.error('Failed to load settings:', error);
     } finally {

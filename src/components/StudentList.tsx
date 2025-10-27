@@ -222,14 +222,14 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
     return (
       <View style={styles.container}>
         <ScrollView ref={scrollViewRef} style={styles.scrollView}>
-          {editableStudents.length === 0 && (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => handleAddStudent(-1)}
-            >
-              <Text style={styles.addButtonText}>+ 학생 추가</Text>
-            </TouchableOpacity>
-          )}
+          {/* 첫 번째 학생 위에 + 버튼 */}
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => handleAddStudent(-1)}
+          >
+            <Text style={styles.addButtonText}>+</Text>
+          </TouchableOpacity>
+
           {editableStudents.map((student, index) => (
             <View key={student.id}>
               <View style={styles.studentRow}>
@@ -261,7 +261,7 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode }) => {
                   />
                 </View>
               </View>
-              {/* + 버튼 */}
+              {/* 각 학생 아래 + 버튼 */}
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => handleAddStudent(index)}

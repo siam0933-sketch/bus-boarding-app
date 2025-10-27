@@ -48,10 +48,24 @@ const callGeminiAPI = async (prompt: string, apiKey: string): Promise<string> =>
 };
 
 /**
+ * Parse action and execute
+ * This will be connected to AppContext later
+ */
+export interface AIAction {
+  action: 'add' | 'remove' | 'update';
+  studentName?: string;
+  route?: string;
+  day?: string;
+  station?: string;
+  time?: string;
+  message: string;
+}
+
+/**
  * Execute AI command
  * Translates natural language to structured actions
  */
-export const executeAICommand = async (command: string, apiKey: string): Promise<string> => {
+export const executeAICommand = async (command: string, apiKey: string): Promise<AIAction> => {
   const systemPrompt = `당신은 학원 버스 탑승 관리 시스템의 AI 어시스턴트입니다.
 사용자의 명령을 분석하여 다음 JSON 형식으로 응답하세요:
 
@@ -104,28 +118,13 @@ export const executeAICommand = async (command: string, apiKey: string): Promise
       throw new Error('AI 응답을 파싱할 수 없습니다.');
     }
 
-    const parsedResponse = JSON.parse(jsonMatch[0]);
+    const parsedResponse: AIAction = JSON.parse(jsonMatch[0]);
 
-    // TODO: Execute the action based on parsedResponse
-    // For now, just return the message
-    return parsedResponse.message || '명령이 처리되었습니다.';
+    // Return the parsed action
+    return parsedResponse;
 
   } catch (error: any) {
     console.error('Gemini AI error:', error);
     throw new Error(error.message || 'AI 명령 처리 중 오류가 발생했습니다.');
   }
 };
-
-/**
- * Parse action and execute
- * This will be connected to AppContext later
- */
-export interface AIAction {
-  action: 'add' | 'remove' | 'update';
-  studentName?: string;
-  route?: string;
-  day?: string;
-  station?: string;
-  time?: string;
-  message: string;
-}

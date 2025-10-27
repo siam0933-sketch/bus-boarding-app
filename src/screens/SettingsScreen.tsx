@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import AsyncStorage from '../utils/storage';
-import { executeAICommand } from '../services/gemini';
+import { executeAICommand, AIAction } from '../services/gemini';
+import { useApp } from '../context/AppContext';
+import { DayOfWeek } from '../types';
 
 const SHEET_URL_KEY = '@sheet_url';
 const GEMINI_API_KEY = '@gemini_api_key';
 
 export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { addStudent, removeStudent, updateStudent } = useApp();
   const [sheetUrl, setSheetUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [aiCommand, setAiCommand] = useState('');
@@ -75,8 +78,42 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
 
     try {
       setAiProcessing(true);
-      const result = await executeAICommand(aiCommand, apiKey);
-      Alert.alert('AI 응답', result);
+      const action = await executeAICommand(aiCommand, apiKey);
+
+      // Execute the action based on type
+      switch (action.action) {
+        case 'add':
+          if (action.studentName && action.route) {
+            addStudent({
+              name: action.studentName,
+              route: action.route,
+              station: action.station || '',
+              expectedTime: action.time || '',
+              days: action.day ? [action.day as DayOfWeek] : ['월', '화', '수', '목', '금'],
+              grade: '',
+              contact: '',
+            });
+          }
+          break;
+
+        case 'remove':
+          if (action.studentName) {
+            removeStudent(action.studentName, action.route, action.day as DayOfWeek);
+          }
+          break;
+
+        case 'update':
+          if (action.studentName) {
+            const updates: any = {};
+            if (action.station) updates.station = action.station;
+            if (action.time) updates.expectedTime = action.time;
+            if (action.route) updates.route = action.route;
+            updateStudent(action.studentName, updates);
+          }
+          break;
+      }
+
+      Alert.alert('성공', action.message || '명령이 실행되었습니다.');
       setAiCommand('');
     } catch (error: any) {
       Alert.alert('오류', error.message || 'AI 명령 실행에 실패했습니다.');

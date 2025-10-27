@@ -22,6 +22,9 @@ interface AppContextType {
   routes: Route[];
   loading: boolean;
   refreshStudents: () => Promise<void>;
+  addStudent: (student: Omit<Student, 'id'>) => void;
+  removeStudent: (studentName: string, route?: string, day?: DayOfWeek) => void;
+  updateStudent: (studentName: string, updates: Partial<Student>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -124,6 +127,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setStudentStatuses([]);
   };
 
+  // 학생 추가
+  const addStudent = (student: Omit<Student, 'id'>) => {
+    const newStudent: Student = {
+      ...student,
+      id: `manual-${Date.now()}-${Math.random()}`,
+    };
+    setStudents((prev) => [...prev, newStudent]);
+    console.log('학생 추가:', newStudent);
+  };
+
+  // 학생 제거
+  const removeStudent = (studentName: string, route?: string, day?: DayOfWeek) => {
+    setStudents((prev) =>
+      prev.filter((student) => {
+        if (student.name !== studentName) return true;
+        if (route && student.route !== route) return true;
+        if (day && !student.days.includes(day)) return true;
+        return false;
+      })
+    );
+    console.log('학생 제거:', studentName, route, day);
+  };
+
+  // 학생 정보 수정
+  const updateStudent = (studentName: string, updates: Partial<Student>) => {
+    setStudents((prev) =>
+      prev.map((student) =>
+        student.name === studentName ? { ...student, ...updates } : student
+      )
+    );
+    console.log('학생 정보 수정:', studentName, updates);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -141,6 +177,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         routes,
         loading,
         refreshStudents,
+        addStudent,
+        removeStudent,
+        updateStudent,
       }}
     >
       {children}

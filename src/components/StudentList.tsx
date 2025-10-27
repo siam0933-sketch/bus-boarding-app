@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Modal, TextInput, Alert } from 'react-native';
 import { Button, ActivityIndicator } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
@@ -35,27 +35,8 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onSaveEdit
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }, [selectedRoute, selectedDay]);
 
-  // 편집 모드 진입/종료 처리
-  useEffect(() => {
-    const wasPreviouslyInEditMode = prevEditMode.current;
-
-    if (isEditMode && !wasPreviouslyInEditMode) {
-      // 편집 모드 진입
-      console.log('Edit mode entered');
-      setEditableStudents([...filteredStudents]);
-      setOriginalStudents([...filteredStudents]);
-    } else if (!isEditMode && wasPreviouslyInEditMode) {
-      // 편집 모드 종료 - 저장
-      console.log('Edit mode exited, saving...');
-      saveEditedStudents();
-    }
-
-    // prevEditMode 업데이트는 마지막에
-    prevEditMode.current = isEditMode;
-  }, [isEditMode, filteredStudents]);
-
   // 편집된 학생 데이터 저장
-  const saveEditedStudents = async () => {
+  const saveEditedStudents = useCallback(async () => {
     try {
       // ref에서 최신 데이터 가져오기
       const currentEditableStudents = editableStudentsRef.current;
@@ -165,7 +146,26 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onSaveEdit
       console.error('Save error:', error);
       Alert.alert('오류', `저장 중 오류가 발생했습니다:\n${error.message}`);
     }
-  };
+  }, [selectedDay, addStudent, removeStudent, updateStudent, refreshStudents]);
+
+  // 편집 모드 진입/종료 처리
+  useEffect(() => {
+    const wasPreviouslyInEditMode = prevEditMode.current;
+
+    if (isEditMode && !wasPreviouslyInEditMode) {
+      // 편집 모드 진입
+      console.log('Edit mode entered');
+      setEditableStudents([...filteredStudents]);
+      setOriginalStudents([...filteredStudents]);
+    } else if (!isEditMode && wasPreviouslyInEditMode) {
+      // 편집 모드 종료 - 저장
+      console.log('Edit mode exited, saving...');
+      saveEditedStudents();
+    }
+
+    // prevEditMode 업데이트는 마지막에
+    prevEditMode.current = isEditMode;
+  }, [isEditMode, filteredStudents, saveEditedStudents]);
 
   const isBoarded = (studentId: string): boolean => {
     const record = boardingRecords.find((r) => r.studentId === studentId);

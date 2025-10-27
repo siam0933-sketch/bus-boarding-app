@@ -37,13 +37,26 @@ function doPost(e) {
       case 'updateStatus':
         result = updateStudentStatus(sheet, data);
         break;
+      case 'getMemo':
+        result = getMemo(sheet, data);
+        break;
+      case 'saveMemo':
+        result = saveMemo(sheet, data);
+        break;
       default:
         throw new Error('Unknown action: ' + data.action);
     }
 
-    return ContentService.createTextOutput(
-      JSON.stringify({ success: true, message: result })
-    ).setMimeType(ContentService.MimeType.JSON);
+    // getMemo는 객체를 반환하므로 다르게 처리
+    if (data.action === 'getMemo') {
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: true, data: result })
+      ).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: true, message: result })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
 
   } catch (error) {
     return ContentService.createTextOutput(
@@ -193,6 +206,38 @@ function updateStudentStatus(sheet, data) {
   } else {
     return `${studentName} 학생을 찾을 수 없습니다.`;
   }
+}
+
+/**
+ * 메모 읽기
+ */
+function getMemo(sheet, data) {
+  const { day } = data;
+
+  const dayColumnMap = {
+    '월': 1, '화': 5, '수': 9, '목': 13, '금': 17
+  };
+
+  const baseCol = dayColumnMap[day] || 1;
+  const memo = sheet.getRange(1, baseCol).getValue();
+
+  return { memo: memo || '' };
+}
+
+/**
+ * 메모 저장
+ */
+function saveMemo(sheet, data) {
+  const { day, memo } = data;
+
+  const dayColumnMap = {
+    '월': 1, '화': 5, '수': 9, '목': 13, '금': 17
+  };
+
+  const baseCol = dayColumnMap[day] || 1;
+  sheet.getRange(1, baseCol).setValue(memo || '');
+
+  return `${day}요일 메모를 저장했습니다.`;
 }
 
 /**

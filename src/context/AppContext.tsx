@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Student, DayOfWeek, BoardingRecord, Route } from '../types';
 import { fetchAllStudents } from '../services/googleSheets';
+import { getMemoFromSheet, saveMemoToSheet } from '../services/sheetsWebhook';
 
 interface StudentStatus {
   studentId: string;
@@ -13,6 +14,7 @@ interface AppContextType {
   selectedRoute: string;
   boardingRecords: BoardingRecord[];
   studentStatuses: StudentStatus[];
+  memo: string;
   setSelectedDay: (day: DayOfWeek) => void;
   setSelectedRoute: (routeId: string) => void;
   toggleBoarding: (studentId: string) => void;
@@ -25,6 +27,8 @@ interface AppContextType {
   addStudent: (student: Omit<Student, 'id'>) => void;
   removeStudent: (studentName: string, route?: string, day?: DayOfWeek) => void;
   updateStudent: (studentName: string, updates: Partial<Student>) => void;
+  setMemo: (memo: string) => void;
+  saveMemo: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -43,6 +47,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [boardingRecords, setBoardingRecords] = useState<BoardingRecord[]>([]);
   const [studentStatuses, setStudentStatuses] = useState<StudentStatus[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [memo, setMemoState] = useState<string>('');
+  const [memoCache, setMemoCache] = useState<{ [key: string]: string }>({});
 
   // Google Sheets에서 학생 데이터 가져오기
   const refreshStudents = async () => {
@@ -58,10 +64,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // 메모 로드
+  const loadMemo = async (day: DayOfWeek) => {
+    try {
+      // 캐시에 있으면 캐시에서 가져오기
+      if (memoCache[day]) {
+        setMemoState(memoCache[day]);
+        return;
+      }
+
+      // 없으면 서버에서 가져오기
+      const memoText = await getMemoFromSheet(day);
+      setMemoState(memoText);
+      setMemoCache((prev) => ({ ...prev, [day]: memoText }));
+    } catch (error) {
+      console.error('메모 로드 실패:', error);
+      setMemoState('');
+    }
+  };
+
+  // 메모 저장
+  const saveMemo = async () => {
+    try {
+      await saveMemoToSheet(selectedDay, memo);
+      // 캐시 업데이트
+      setMemoCache((prev) => ({ ...prev, [selectedDay]: memo }));
+      console.log('메모 저장 완료');
+    } catch (error) {
+      console.error('메모 저장 실패:', error);
+      throw error;
+    }
+  };
+
+  // 메모 설정 (로컬 상태만 변경)
+  const setMemo = (newMemo: string) => {
+    setMemoState(newMemo);
+  };
+
   // 앱 시작 시 데이터 로드
   useEffect(() => {
     refreshStudents();
   }, []);
+
+  // 요일이 변경될 때 메모 로드
+  useEffect(() => {
+    loadMemo(selectedDay);
+  }, [selectedDay]);
 
   // Google Sheets 데이터에서 노선 자동 감지
   const routes = useMemo(() => {
@@ -168,6 +216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedRoute,
         boardingRecords,
         studentStatuses,
+        memo,
         setSelectedDay,
         setSelectedRoute,
         toggleBoarding,
@@ -180,6 +229,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addStudent,
         removeStudent,
         updateStudent,
+        setMemo,
+        saveMemo,
       }}
     >
       {children}

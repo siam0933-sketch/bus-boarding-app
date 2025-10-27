@@ -143,3 +143,28 @@ export const updateStudentStatus = async (
 
   return result.message || '학생 상태가 업데이트되었습니다.';
 };
+
+/**
+ * 메모 가져오기
+ */
+export const getMemoFromSheet = async (day: string): Promise<string> => {
+  const result = await callWebhook({
+    action: 'getMemo',
+    day,
+  });
+
+  return result.data?.memo || '';
+};
+
+/**
+ * 메모 저장
+ */
+export const saveMemoToSheet = async (day: string, memo: string): Promise<string> => {
+  const result = await callWebhook({
+    action: 'saveMemo',
+    day,
+    memo,
+  });
+
+  return result.message || '메모가 저장되었습니다.';
+};

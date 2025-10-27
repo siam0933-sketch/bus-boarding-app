@@ -1,19 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity, Text, Modal } from 'react-native';
 import { DaySelector } from '../components/DaySelector';
 import { RouteSelector } from '../components/RouteSelector';
 import { StudentList } from '../components/StudentList';
 import { SettingsScreen } from './SettingsScreen';
+import { useApp } from '../context/AppContext';
 
 export const MainScreen: React.FC = () => {
-  const [memo, setMemo] = useState('');
+  const { memo, setMemo, saveMemo } = useApp();
   const [isExpanded, setIsExpanded] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleEditToggle = () => {
     setIsEditMode(!isEditMode);
   };
+
+  // 메모 변경 시 자동 저장 (debounce 1초)
+  const handleMemoChange = (text: string) => {
+    setMemo(text);
+
+    // 기존 타이머 취소
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // 1초 후 저장
+    saveTimeoutRef.current = setTimeout(() => {
+      saveMemo().catch((error) => {
+        console.error('메모 자동 저장 실패:', error);
+      });
+    }, 1000);
+  };
+
+  // 컴포넌트 unmount 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -48,7 +76,7 @@ export const MainScreen: React.FC = () => {
           <TextInput
             style={[styles.memoInput, isExpanded && styles.memoInputExpanded]}
             value={memo}
-            onChangeText={setMemo}
+            onChangeText={handleMemoChange}
             placeholder="메모를 입력하세요"
             placeholderTextColor="#999"
             multiline={isExpanded}

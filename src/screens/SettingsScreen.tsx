@@ -6,6 +6,9 @@ import { saveWebhookUrl } from '../services/sheetsWebhook';
 const SHEET_URL_KEY = '@sheet_url';
 const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
 
+// 기본 웹훅 URL (보안 주의: GitHub에 공개됨)
+const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwjbgJu01HY6XeEDY3pp5J9CGD2SD1XXKxtTCgyhNVuVYZlbVFIckcofc0KEkwYGISk/exec';
+
 export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [sheetUrl, setSheetUrl] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -21,7 +24,8 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
       const url = await AsyncStorage.getItem(SHEET_URL_KEY);
       const webhook = await AsyncStorage.getItem(WEBHOOK_URL_KEY);
       if (url) setSheetUrl(url);
-      if (webhook) setWebhookUrl(webhook);
+      // 저장된 웹훅 URL이 없으면 기본값 사용
+      setWebhookUrl(webhook || DEFAULT_WEBHOOK_URL);
     } catch (error) {
       console.error('Failed to load settings:', error);
     } finally {

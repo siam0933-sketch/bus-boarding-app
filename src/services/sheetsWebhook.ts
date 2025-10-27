@@ -7,6 +7,9 @@ import AsyncStorage from '../utils/storage';
 
 const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
 
+// 기본 웹훅 URL (보안 주의: GitHub에 공개됨)
+const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwjbgJu01HY6XeEDY3pp5J9CGD2SD1XXKxtTCgyhNVuVYZlbVFIckcofc0KEkwYGISk/exec';
+
 /**
  * 저장된 웹훅 URL 가져오기
  */
@@ -35,11 +38,9 @@ export const saveWebhookUrl = async (url: string): Promise<void> => {
  * 웹훅 호출
  */
 const callWebhook = async (data: any): Promise<any> => {
-  const webhookUrl = await getWebhookUrl();
-
-  if (!webhookUrl) {
-    throw new Error('Apps Script 웹훅 URL이 설정되지 않았습니다.\n설정 화면에서 URL을 입력해주세요.');
-  }
+  const savedUrl = await getWebhookUrl();
+  // 저장된 URL이 없으면 기본값 사용
+  const webhookUrl = savedUrl || DEFAULT_WEBHOOK_URL;
 
   try {
     const response = await fetch(webhookUrl, {

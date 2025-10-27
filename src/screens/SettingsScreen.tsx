@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TextInput, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import AsyncStorage from '../utils/storage';
+import { executeAICommand } from '../services/gemini';
 
 const SHEET_URL_KEY = '@sheet_url';
+const GEMINI_API_KEY = '@gemini_api_key';
 
 export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [sheetUrl, setSheetUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [aiCommand, setAiCommand] = useState('');
+  const [aiProcessing, setAiProcessing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadSheetUrl();
+    loadSettings();
   }, []);
 
-  const loadSheetUrl = async () => {
+  const loadSettings = async () => {
     try {
       const url = await AsyncStorage.getItem(SHEET_URL_KEY);
-      if (url) {
-        setSheetUrl(url);
-      }
+      const key = await AsyncStorage.getItem(GEMINI_API_KEY);
+      if (url) setSheetUrl(url);
+      if (key) setApiKey(key);
     } catch (error) {
-      console.error('Failed to load sheet URL:', error);
+      console.error('Failed to load settings:', error);
     } finally {
       setLoading(false);
     }
@@ -42,6 +47,44 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
     }
   };
 
+  const saveApiKey = async () => {
+    if (!apiKey.trim()) {
+      Alert.alert('오류', 'Gemini API 키를 입력해주세요.');
+      return;
+    }
+
+    try {
+      await AsyncStorage.setItem(GEMINI_API_KEY, apiKey.trim());
+      Alert.alert('성공', 'API 키가 저장되었습니다.');
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+      Alert.alert('오류', 'API 키 저장에 실패했습니다.');
+    }
+  };
+
+  const handleAICommand = async () => {
+    if (!aiCommand.trim()) {
+      Alert.alert('오류', '명령을 입력해주세요.');
+      return;
+    }
+
+    if (!apiKey) {
+      Alert.alert('오류', 'Gemini API 키를 먼저 저장해주세요.');
+      return;
+    }
+
+    try {
+      setAiProcessing(true);
+      const result = await executeAICommand(aiCommand, apiKey);
+      Alert.alert('AI 응답', result);
+      setAiCommand('');
+    } catch (error: any) {
+      Alert.alert('오류', error.message || 'AI 명령 실행에 실패했습니다.');
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -59,35 +102,100 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
         </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
-        <Text style={styles.label}>Google Sheets URL</Text>
-        <Text style={styles.description}>
-          공유된 Google Sheets의 URL을 입력하세요
-        </Text>
-        <TextInput
-          style={styles.input}
-          value={sheetUrl}
-          onChangeText={setSheetUrl}
-          placeholder="https://docs.google.com/spreadsheets/d/..."
-          placeholderTextColor="#999"
-          multiline
-          numberOfLines={3}
-          textAlignVertical="top"
-        />
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.content}>
+          {/* Google Sheets URL 섹션 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📊 Google Sheets 연결</Text>
+            <Text style={styles.label}>Google Sheets URL</Text>
+            <Text style={styles.description}>
+              공유된 Google Sheets의 URL을 입력하세요
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={sheetUrl}
+              onChangeText={setSheetUrl}
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={saveSheetUrl}>
+              <Text style={styles.saveButtonText}>저장</Text>
+            </TouchableOpacity>
+          </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={saveSheetUrl}>
-          <Text style={styles.saveButtonText}>저장</Text>
-        </TouchableOpacity>
+          {/* Gemini API 키 섹션 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🤖 AI 기능 설정</Text>
+            <Text style={styles.label}>Gemini API 키</Text>
+            <Text style={styles.description}>
+              Google AI Studio에서 발급받은 API 키를 입력하세요
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={apiKey}
+              onChangeText={setApiKey}
+              placeholder="AIza..."
+              placeholderTextColor="#999"
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={saveApiKey}>
+              <Text style={styles.saveButtonText}>API 키 저장</Text>
+            </TouchableOpacity>
 
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>💡 사용 방법</Text>
-          <Text style={styles.infoText}>
-            1. Google Sheets를 공유 설정하세요{'\n'}
-            2. URL 전체를 복사하여 붙여넣으세요{'\n'}
-            3. 저장 후 앱을 재시작하세요
-          </Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>💡 API 키 발급 방법</Text>
+              <Text style={styles.infoText}>
+                1. https://aistudio.google.com 접속{'\n'}
+                2. "Get API key" 클릭{'\n'}
+                3. 발급받은 키를 복사하여 입력
+              </Text>
+            </View>
+          </View>
+
+          {/* AI 명령 섹션 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>💬 AI 명령</Text>
+            <Text style={styles.label}>명령 입력</Text>
+            <Text style={styles.description}>
+              자연어로 탑승 리스트 수정 명령을 입력하세요
+            </Text>
+            <TextInput
+              style={[styles.input, styles.commandInput]}
+              value={aiCommand}
+              onChangeText={setAiCommand}
+              placeholder="예: 김철수를 3시부 노선에 추가해줘"
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              editable={!aiProcessing}
+            />
+            <TouchableOpacity
+              style={[styles.commandButton, aiProcessing && styles.buttonDisabled]}
+              onPress={handleAICommand}
+              disabled={aiProcessing}
+            >
+              {aiProcessing ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.saveButtonText}>실행</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>💡 명령 예시</Text>
+              <Text style={styles.infoText}>
+                • "박민수를 5시부 노선에 추가"{'\n'}
+                • "이지은을 월요일 3시부에서 제거"{'\n'}
+                • "최수진의 정류장을 학교앞으로 변경"
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -118,8 +226,20 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: 'bold',
   },
+  scrollView: {
+    flex: 1,
+  },
   content: {
     padding: 16,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 16,
   },
   label: {
     fontSize: 16,
@@ -149,6 +269,21 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
     marginBottom: 24,
+  },
+  commandInput: {
+    minHeight: 100,
+  },
+  commandButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginBottom: 24,
+    minHeight: 54,
+    justifyContent: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: '#999',
   },
   saveButtonText: {
     color: '#ffffff',

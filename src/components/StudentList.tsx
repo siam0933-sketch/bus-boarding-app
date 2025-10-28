@@ -165,25 +165,31 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onSaveEdit
 
   // 편집 모드 진입/종료 처리
   useEffect(() => {
+    console.log('>>> useEffect triggered - isEditMode:', isEditMode, 'prevEditMode:', prevEditMode.current);
     const wasPreviouslyInEditMode = prevEditMode.current;
 
     if (isEditMode && !wasPreviouslyInEditMode) {
       // 편집 모드 진입 - ref에서 최신 filteredStudents 가져오기
-      console.log('Edit mode entered');
+      console.log('✅ Edit mode ENTERING');
       const currentFiltered = filteredStudentsRef.current;
       console.log('Initializing with students:', currentFiltered.length);
+      console.log('Students data:', currentFiltered);
       setEditableStudents([...currentFiltered]);
       setOriginalStudents([...currentFiltered]);
     } else if (!isEditMode && wasPreviouslyInEditMode) {
       // 편집 모드 종료 - 저장
-      console.log('Edit mode exited, saving...');
+      console.log('✅ Edit mode EXITING - will save');
       console.log('Editable students count:', editableStudentsRef.current.length);
       console.log('Original students count:', originalStudentsRef.current.length);
       saveEditedStudents();
+    } else {
+      console.log('⚠️ useEffect ran but no state change detected');
+      console.log('isEditMode:', isEditMode, 'wasPreviouslyInEditMode:', wasPreviouslyInEditMode);
     }
 
     // prevEditMode 업데이트는 마지막에
     prevEditMode.current = isEditMode;
+    console.log('>>> useEffect completed - prevEditMode updated to:', isEditMode);
   }, [isEditMode, saveEditedStudents]);
 
   const isBoarded = (studentId: string): boolean => {
@@ -279,12 +285,14 @@ export const StudentList: React.FC<StudentListProps> = ({ isEditMode, onSaveEdit
 
   // 편집 모드: 학생 정보 수정
   const handleStudentChange = (index: number, field: keyof Student, value: string) => {
+    console.log(`Student changed - index: ${index}, field: ${field}, value: ${value}`);
     const newStudents = [...editableStudents];
     newStudents[index] = {
       ...newStudents[index],
       [field]: value,
     };
     setEditableStudents(newStudents);
+    console.log('Updated editable students:', newStudents);
   };
 
   if (loading) {

@@ -14,6 +14,9 @@ export const MainScreen: React.FC = () => {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleEditToggle = () => {
+    console.log('=== EDIT BUTTON CLICKED ===');
+    console.log('Current isEditMode:', isEditMode);
+    console.log('Will change to:', !isEditMode);
     setIsEditMode(!isEditMode);
   };
 

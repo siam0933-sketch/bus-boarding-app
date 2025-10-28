@@ -46,7 +46,7 @@ const callWebhook = async (data: any): Promise<any> => {
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
       },
       body: JSON.stringify(data),
     });

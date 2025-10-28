@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Modal, TextInput,
 import { Button, ActivityIndicator } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
 import { Student } from '../types';
-import { addStudentToSheet, removeStudentFromSheet, updateStudentInSheet, updateStudentStatus } from '../services/sheetsWebhook';
+import { addStudentToSheet, removeStudentFromSheet, updateStudentInSheet, updateStudentStatus } from '../services/simpleAppsScript';
 
 interface StudentListProps {
   isEditMode: boolean;

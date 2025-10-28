@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, TextInput, Text, TouchableOpacity, ScrollView } from 'react-native';
 import AsyncStorage from '../utils/storage';
-import { saveWebhookUrl } from '../services/sheetsWebhook';
+import { saveScriptUrl } from '../services/simpleAppsScript';
 
-const SHEET_URL_KEY = '@sheet_url';
-const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
+const SCRIPT_URL_KEY = '@apps_script_url';
 
-// 기본 웹훅 URL (보안 주의: GitHub에 공개됨)
-const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyPmA80LqUB3WKW5mApPt8utHdIlX-2pXKvXgdK9dZ9acLlgZMeAB_mbujBFqjw1Lu3/exec';
+// 기본 Apps Script URL (보안 주의: GitHub에 공개됨)
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPmA80LqUB3WKW5mApPt8utHdIlX-2pXKvXgdK9dZ9acLlgZMeAB_mbujBFqjw1Lu3/exec';
 
 export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [sheetUrl, setSheetUrl] = useState('');
-  const [webhookUrl, setWebhookUrl] = useState('');
+  const [scriptUrl, setScriptUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
 
@@ -21,11 +19,8 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
 
   const loadSettings = async () => {
     try {
-      const url = await AsyncStorage.getItem(SHEET_URL_KEY);
-      const webhook = await AsyncStorage.getItem(WEBHOOK_URL_KEY);
-      if (url) setSheetUrl(url);
-      // 저장된 웹훅 URL이 없으면 기본값 사용
-      setWebhookUrl(webhook || DEFAULT_WEBHOOK_URL);
+      const url = await AsyncStorage.getItem(SCRIPT_URL_KEY);
+      setScriptUrl(url || DEFAULT_SCRIPT_URL);
     } catch (error) {
       console.error('Failed to load settings:', error);
     } finally {
@@ -33,37 +28,20 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
     }
   };
 
-  const saveSheetUrl = async () => {
-    if (!sheetUrl.trim()) {
-      Alert.alert('오류', 'Google Sheets URL을 입력해주세요.');
-      return;
-    }
-
-    try {
-      await AsyncStorage.setItem(SHEET_URL_KEY, sheetUrl.trim());
-      Alert.alert('성공', 'Google Sheets URL이 저장되었습니다.\n앱을 재시작해주세요.', [
-        { text: '확인', onPress: onClose }
-      ]);
-    } catch (error) {
-      console.error('Failed to save sheet URL:', error);
-      Alert.alert('오류', 'URL 저장에 실패했습니다.');
-    }
-  };
-
-  const saveWebhook = async () => {
-    if (!webhookUrl.trim()) {
-      setSaveMessage('❌ Apps Script 웹훅 URL을 입력해주세요.');
+  const saveUrl = async () => {
+    if (!scriptUrl.trim()) {
+      setSaveMessage('❌ Apps Script URL을 입력해주세요.');
       setTimeout(() => setSaveMessage(''), 3000);
       return;
     }
 
     try {
-      await saveWebhookUrl(webhookUrl.trim());
-      setSaveMessage('✅ 웹훅 URL이 저장되었습니다!');
+      await saveScriptUrl(scriptUrl.trim());
+      setSaveMessage('✅ URL이 저장되었습니다! 앱을 새로고침하세요.');
       setTimeout(() => setSaveMessage(''), 3000);
     } catch (error) {
-      console.error('Failed to save webhook URL:', error);
-      setSaveMessage('❌ 웹훅 URL 저장에 실패했습니다.');
+      console.error('Failed to save URL:', error);
+      setSaveMessage('❌ URL 저장에 실패했습니다.');
       setTimeout(() => setSaveMessage(''), 3000);
     }
   };
@@ -87,44 +65,26 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
-          {/* Google Sheets URL 섹션 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📊 Google Sheets 연결</Text>
+            <Text style={styles.sectionTitle}>📊 Google Apps Script 연결</Text>
 
-            <Text style={styles.label}>Google Sheets URL (읽기용)</Text>
+            <Text style={styles.label}>Apps Script URL</Text>
             <Text style={styles.description}>
-              공유된 Google Sheets의 URL을 입력하세요
+              Google Apps Script 웹 앱 URL을 입력하세요.
+              {'\n'}이 URL 하나로 읽기/쓰기를 모두 처리합니다.
             </Text>
             <TextInput
               style={styles.input}
-              value={sheetUrl}
-              onChangeText={setSheetUrl}
-              placeholder="https://docs.google.com/spreadsheets/d/..."
-              placeholderTextColor="#999"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-            <TouchableOpacity style={styles.saveButton} onPress={saveSheetUrl}>
-              <Text style={styles.saveButtonText}>저장</Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.label, {marginTop: 16}]}>Apps Script 웹훅 URL (쓰기용)</Text>
-            <Text style={styles.description}>
-              Google Sheets에 데이터를 추가/수정하려면 웹훅 URL이 필요합니다
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={webhookUrl}
-              onChangeText={setWebhookUrl}
+              value={scriptUrl}
+              onChangeText={setScriptUrl}
               placeholder="https://script.google.com/macros/s/..."
               placeholderTextColor="#999"
               multiline
               numberOfLines={3}
               textAlignVertical="top"
             />
-            <TouchableOpacity style={styles.saveButton} onPress={saveWebhook}>
-              <Text style={styles.saveButtonText}>웹훅 URL 저장</Text>
+            <TouchableOpacity style={styles.saveButton} onPress={saveUrl}>
+              <Text style={styles.saveButtonText}>저장</Text>
             </TouchableOpacity>
 
             {saveMessage !== '' && (
@@ -134,13 +94,17 @@ export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) =
             )}
 
             <View style={styles.infoBox}>
-              <Text style={styles.infoTitle}>💡 웹훅 설정 방법</Text>
+              <Text style={styles.infoTitle}>💡 설정 방법</Text>
               <Text style={styles.infoText}>
-                자세한 설정 방법은 GOOGLE_APPS_SCRIPT_SETUP.md 파일을 참고하세요
+                1. Google Sheets 열기{'\n'}
+                2. 확장 프로그램 {'>'} Apps Script{'\n'}
+                3. APPS_SCRIPT_SIMPLE.md 파일의 코드 복사{'\n'}
+                4. 배포 {'>'} 새 배포 {'>'} 웹 앱{'\n'}
+                5. "모든 사용자" 권한으로 배포{'\n'}
+                6. 받은 URL을 여기에 입력
               </Text>
             </View>
           </View>
-
         </View>
       </ScrollView>
     </View>
@@ -198,6 +162,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 12,
+    lineHeight: 20,
   },
   input: {
     borderWidth: 1,
@@ -237,11 +202,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   infoBox: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f5f5e9',
     padding: 16,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0a0',
   },
   infoTitle: {
     fontSize: 16,

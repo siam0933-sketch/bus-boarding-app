@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Student, DayOfWeek, BoardingRecord, Route } from '../types';
-import { fetchAllStudents } from '../services/googleSheets';
-import { getMemoFromSheet, saveMemoToSheet } from '../services/sheetsWebhook';
+import {
+  fetchAllStudents,
+  getMemoFromSheet,
+  saveMemoToSheet,
+} from '../services/simpleAppsScript';
 
 interface StudentStatus {
   studentId: string;

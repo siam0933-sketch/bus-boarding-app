@@ -7,7 +7,7 @@ const SHEET_URL_KEY = '@sheet_url';
 const WEBHOOK_URL_KEY = '@apps_script_webhook_url';
 
 // 기본 웹훅 URL (보안 주의: GitHub에 공개됨)
-const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyMx_6iluKAjoLaxMofHqmrj_CRPQgqcspzUr-1j0_Hm9HsTbp_a7_UAXcHXFmr6vp8/exec';
+const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyPmA80LqUB3WKW5mApPt8utHdIlX-2pXKvXgdK9dZ9acLlgZMeAB_mbujBFqjw1Lu3/exec';
 
 export const SettingsScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [sheetUrl, setSheetUrl] = useState('');

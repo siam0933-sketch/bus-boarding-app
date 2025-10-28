@@ -49,7 +49,6 @@ const callWebhook = async (data: any): Promise<any> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-      redirect: 'follow',
     });
 
     const result = await response.json();

@@ -17,20 +17,6 @@
  * POST 요청으로 학생 데이터를 추가/수정/삭제합니다
  */
 
-/**
- * CORS preflight 요청 처리
- */
-function doOptions(e) {
-  return ContentService.createTextOutput("")
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeaders({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    });
-}
-
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -65,26 +51,17 @@ function doPost(e) {
     if (data.action === 'getMemo') {
       return ContentService.createTextOutput(
         JSON.stringify({ success: true, data: result })
-      ).setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': '*'
-      });
+      ).setMimeType(ContentService.MimeType.JSON);
     } else {
       return ContentService.createTextOutput(
         JSON.stringify({ success: true, message: result })
-      ).setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': '*'
-      });
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
   } catch (error) {
     return ContentService.createTextOutput(
       JSON.stringify({ success: false, error: error.toString() })
-    ).setMimeType(ContentService.MimeType.JSON)
-    .setHeaders({
-      'Access-Control-Allow-Origin': '*'
-    });
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -269,10 +246,7 @@ function saveMemo(sheet, data) {
 function doGet(e) {
   return ContentService.createTextOutput(
     JSON.stringify({ status: 'ready', message: '웹훅이 정상 작동 중입니다.' })
-  ).setMimeType(ContentService.MimeType.JSON)
-  .setHeaders({
-    'Access-Control-Allow-Origin': '*'
-  });
+  ).setMimeType(ContentService.MimeType.JSON);
 }
 ```
 

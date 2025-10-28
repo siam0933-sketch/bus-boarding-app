@@ -38,9 +38,9 @@ export const saveWebhookUrl = async (url: string): Promise<void> => {
  * 웹훅 호출
  */
 const callWebhook = async (data: any): Promise<any> => {
-  const savedUrl = await getWebhookUrl();
-  // 저장된 URL이 없으면 기본값 사용
-  const webhookUrl = savedUrl || DEFAULT_WEBHOOK_URL;
+  // 항상 최신 DEFAULT_WEBHOOK_URL 사용 (설정보다 우선)
+  const webhookUrl = DEFAULT_WEBHOOK_URL;
+  console.log('Using webhook URL:', webhookUrl);
 
   try {
     const response = await fetch(webhookUrl, {

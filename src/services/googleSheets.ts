@@ -91,8 +91,8 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
       console.log(`\n========== ${day}요일 데이터 파싱 시작 ==========`);
 
-      // 데이터 파싱 - Row 0부터 시작
-      let rowIndex = 0;
+      // 데이터 파싱 - Row 3부터 시작 (0=메모, 1=요일, 2=헤더, 3부터 데이터)
+      let rowIndex = 3;
       let lastValidTime = '';
 
       while (rowIndex < rows.length) {

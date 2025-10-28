@@ -82,8 +82,8 @@ function addStudent(sheet, data) {
 
   const baseCol = dayColumnMap[day] || 1;
 
-  // 빈 행 찾기 (2행부터 시작, 1행은 헤더)
-  let row = 2;
+  // 빈 행 찾기 (4행부터 시작, 1=메모, 2=요일, 3=헤더)
+  let row = 4;
   while (sheet.getRange(row, baseCol + 3).getValue() !== '') {
     row++;
   }
@@ -111,8 +111,8 @@ function removeStudent(sheet, data) {
   const lastRow = sheet.getLastRow();
   let removed = false;
 
-  // 역순으로 검색 (삭제 시 행 번호 변경 방지)
-  for (let row = lastRow; row >= 2; row--) {
+  // 역순으로 검색 (삭제 시 행 번호 변경 방지) - 4행부터
+  for (let row = lastRow; row >= 4; row--) {
     const name = sheet.getRange(row, baseCol + 3).getValue();
     const routeValue = sheet.getRange(row, baseCol).getValue();
 
@@ -143,7 +143,7 @@ function updateStudent(sheet, data) {
   const lastRow = sheet.getLastRow();
   let updated = false;
 
-  for (let row = 2; row <= lastRow; row++) {
+  for (let row = 4; row <= lastRow; row++) {
     const name = sheet.getRange(row, baseCol + 3).getValue();
 
     if (name === studentName) {
@@ -176,7 +176,7 @@ function updateStudentStatus(sheet, data) {
   const lastRow = sheet.getLastRow();
   let updated = false;
 
-  for (let row = 2; row <= lastRow; row++) {
+  for (let row = 4; row <= lastRow; row++) {
     const cellValue = sheet.getRange(row, nameCol).getValue();
 
     // 기존 이름에서 상태 제거 (괄호 안의 내용 제거)

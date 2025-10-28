@@ -17,10 +17,13 @@
  * POST 요청으로 학생 데이터를 추가/수정/삭제합니다
  */
 
+// 스프레드시트 ID (본인의 시트 ID로 변경하세요)
+const SPREADSHEET_ID = '1LRiMX6-q3E5Zyy12nZtkBW1ccG6HjpJLBieT-S55Jb4';
+
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
 
     let result;
 
@@ -244,13 +247,41 @@ function saveMemo(sheet, data) {
  * GET 요청 테스트
  */
 function doGet(e) {
-  return ContentService.createTextOutput(
-    JSON.stringify({ status: 'ready', message: '웹훅이 정상 작동 중입니다.' })
-  ).setMimeType(ContentService.MimeType.JSON);
+  try {
+    // 스프레드시트 접근 테스트
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
+    const sheetName = sheet.getName();
+
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: 'ready',
+        message: '웹훅이 정상 작동 중입니다.',
+        sheetName: sheetName
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: 'error',
+        message: error.toString()
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 ```
 
-## 3. 배포하기
+## 3. 스프레드시트 ID 확인 및 수정
+
+**중요**: 위 코드의 `SPREADSHEET_ID` 상수에 본인의 시트 ID가 올바르게 입력되어 있는지 확인하세요.
+
+현재 설정된 ID: `1LRiMX6-q3E5Zyy12nZtkBW1ccG6HjpJLBieT-S55Jb4`
+
+만약 다른 시트를 사용한다면:
+1. Google Sheets URL에서 ID 부분 복사:
+   `https://docs.google.com/spreadsheets/d/[여기가_ID]/edit`
+2. 코드의 `SPREADSHEET_ID` 값 변경
+
+## 4. 배포하기
 
 1. 상단의 **배포** 버튼 클릭 > **새 배포** 선택
 2. **유형 선택** (⚙️ 아이콘) > **웹 앱** 선택
@@ -262,13 +293,13 @@ function doGet(e) {
 5. **액세스 승인** 클릭 > Google 계정 선택 > **고급** > **안전하지 않은 페이지로 이동** > **허용**
 6. **웹 앱 URL** 복사 (예: `https://script.google.com/macros/s/AKfy...`)
 
-## 4. 앱 설정에 URL 입력
+## 5. 앱 설정에 URL 입력
 
 1. 앱 실행 > 설정(⚙️) 버튼
 2. "Apps Script 웹훅 URL" 입력란에 복사한 URL 붙여넣기
 3. 저장
 
-## 5. 테스트
+## 6. 테스트
 
 AI 명령 입력:
 - "김철수를 월요일 3시부 노선에 추가해줘"

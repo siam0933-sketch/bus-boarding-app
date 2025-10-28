@@ -94,6 +94,7 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
       // 데이터 파싱 - Row 3부터 시작 (0=메모, 1=요일, 2=헤더, 3부터 데이터)
       let rowIndex = 3;
       let lastValidTime = '';
+      let headerSkipped = false; // 헤더를 한 번만 건너뛰도록
 
       while (rowIndex < rows.length) {
         const row = rows[rowIndex];
@@ -109,19 +110,23 @@ export const fetchAllStudents = async (): Promise<Student[]> => {
 
         console.log(`Row ${rowIndex}: route=${routeCell?.v}, time=${timeCell?.v || timeCell?.f}, station=${stationCell?.v}, name=${nameCell?.v}`);
 
-        // 이름이 없으면 건너뛰기
+        // 이름이 없으면 더 이상 데이터가 없는 것으로 간주하고 중단
         if (!nameCell || !nameCell.v) {
-          rowIndex++;
-          continue;
+          console.log(`Row ${rowIndex}: 이름 없음, 파싱 종료`);
+          break;
         }
 
         const nameString = String(nameCell.v).trim();
 
-        // 헤더 행 건너뛰기 (정류장, 탑승객, 시간, 이름, 노선 등)
-        if (nameString === '탑승객' || nameString === '정류장' || nameString === '이름' || nameString === '시간' || nameString.includes('요일')) {
-          console.log(`Row ${rowIndex}: 헤더 행 건너뛰기`);
-          rowIndex++;
-          continue;
+        // 헤더 행 건너뛰기 - 첫 번째 데이터 행(rowIndex=3)만 검사
+        if (rowIndex === 3 && !headerSkipped) {
+          if (nameString === '탑승객' || nameString === '정류장' || nameString === '이름' || nameString === '시간' || nameString.includes('요일') || nameString.includes('노선')) {
+            console.log(`Row ${rowIndex}: 헤더 행 건너뛰기`);
+            headerSkipped = true;
+            rowIndex++;
+            continue;
+          }
+          headerSkipped = true; // 헤더가 아니어도 검사는 완료
         }
 
         // 시간 데이터를 시:분 형식으로 변환

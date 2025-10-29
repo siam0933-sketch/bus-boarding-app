@@ -2,181 +2,241 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>버스 탑승 관리</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 8px;
+      background: #f0f2f5;
+      overflow-x: hidden;
     }
 
     .container {
-      max-width: 800px;
-      margin: 0 auto;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
     }
 
     .header {
-      background: #2196F3;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       padding: 16px;
       text-align: center;
       font-size: 20px;
       font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      flex-shrink: 0;
     }
 
     .tabs {
       display: flex;
-      border-bottom: 2px solid #e0e0e0;
       background: white;
       overflow-x: auto;
+      border-bottom: 2px solid #e0e0e0;
+      flex-shrink: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
     }
 
     .tab {
       flex: 1;
-      padding: 12px;
+      min-width: 50px;
+      padding: 12px 8px;
       text-align: center;
       cursor: pointer;
       border: none;
       background: white;
-      font-size: 14px;
-      min-width: 60px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s;
     }
 
     .tab.active {
-      background: #2196F3;
-      color: white;
+      color: #667eea;
       font-weight: bold;
+      border-bottom: 3px solid #667eea;
     }
 
     .controls {
       padding: 12px;
+      background: white;
       border-bottom: 1px solid #e0e0e0;
       display: flex;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-shrink: 0;
     }
 
     .route-select {
       flex: 1;
-      min-width: 120px;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      background: white;
     }
 
     .edit-btn {
-      padding: 8px 16px;
-      background: #4CAF50;
+      padding: 10px 20px;
+      background: #667eea;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: bold;
+      transition: all 0.2s;
     }
 
     .edit-btn.active {
-      background: #FF9800;
+      background: #FF6B6B;
     }
 
     .memo-section {
       padding: 12px;
       border-bottom: 1px solid #e0e0e0;
+      background: #fffacd;
+      flex-shrink: 0;
     }
 
     .memo-input {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
       font-size: 14px;
       resize: vertical;
-      min-height: 60px;
+      min-height: 50px;
+      font-family: inherit;
+    }
+
+    .students-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .students-list {
-      padding: 8px;
-    }
-
-    .student-item {
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      padding: 12px;
-      margin-bottom: 8px;
-      position: relative;
-    }
-
-    .student-item.status-결석 {
-      background: #FFB3BA;
-    }
-
-    .student-item.status-시간변경 {
-      background: #FFFFBA;
-    }
-
-    .student-item.status-직접등원 {
-      background: #BAE1FF;
-    }
-
-    .student-name {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    .student-info {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 8px;
-    }
-
-    .student-actions {
       display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 80px;
     }
 
-    .status-btn {
-      padding: 6px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+    .student-card {
       background: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      user-select: none;
       cursor: pointer;
-      font-size: 12px;
     }
 
-    .status-btn.active {
-      background: #2196F3;
-      color: white;
+    .student-card.boarded {
+      background: #e3f2fd;
       border-color: #2196F3;
+    }
+
+    .student-card.status-결석 {
+      background: #ffebee;
+    }
+
+    .student-card.status-시간변경 {
+      background: #fff9c4;
+    }
+
+    .student-card.status-직접등원 {
+      background: #e8f5e9;
+    }
+
+    .student-card.pressing {
+      transform: scale(0.98);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .time {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+      min-width: 70px;
+    }
+
+    .station {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #000;
+      min-width: 60px;
+      text-align: right;
+    }
+
+    .status-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #FF6B6B;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .route-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: #667eea;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
     }
 
     .delete-btn {
       position: absolute;
       top: 8px;
       right: 8px;
-      background: #f44336;
+      background: #FF6B6B;
       color: white;
       border: none;
       border-radius: 50%;
-      width: 24px;
-      height: 24px;
+      width: 32px;
+      height: 32px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 18px;
+      font-weight: bold;
       display: none;
+      z-index: 10;
     }
 
     .edit-mode .delete-btn {
@@ -184,10 +244,10 @@
     }
 
     .add-student-form {
-      background: #f9f9f9;
-      padding: 12px;
-      margin-bottom: 8px;
-      border-radius: 4px;
+      background: #f8f9fa;
+      padding: 16px;
+      margin-bottom: 16px;
+      border-radius: 12px;
       border: 2px dashed #ccc;
       display: none;
     }
@@ -199,27 +259,55 @@
     .form-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .form-input {
       flex: 1;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
     }
 
     .add-btn {
       width: 100%;
-      padding: 10px;
-      background: #4CAF50;
+      padding: 14px;
+      background: #667eea;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: bold;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 12px;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+
+    .bottom-bar.show {
+      display: block;
+    }
+
+    .reset-btn {
+      width: 100%;
+      padding: 16px;
+      background: #FF6B6B;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(255,107,107,0.3);
     }
 
     .loading {
@@ -228,17 +316,96 @@
       color: #666;
     }
 
+    /* 상태 팝업 */
+    .status-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .status-popup.show {
+      display: flex;
+      animation: fadeIn 0.2s;
+    }
+
+    .popup-content {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+      animation: slideUp 0.3s;
+    }
+
+    .popup-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .status-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-option {
+      padding: 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .status-option:active {
+      transform: scale(0.95);
+    }
+
+    .status-option.결석 {
+      background: #ffebee;
+      border-color: #FF6B6B;
+    }
+
+    .status-option.시간변경 {
+      background: #fff9c4;
+      border-color: #FFC107;
+    }
+
+    .status-option.직접등원 {
+      background: #e8f5e9;
+      border-color: #4CAF50;
+    }
+
+    .status-option.취소 {
+      background: #f5f5f5;
+      border-color: #999;
+    }
+
     .toast {
       position: fixed;
-      bottom: 20px;
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
-      background: #323232;
+      background: rgba(0,0,0,0.8);
       color: white;
       padding: 12px 24px;
-      border-radius: 4px;
+      border-radius: 24px;
       display: none;
-      z-index: 1000;
+      z-index: 999;
+      font-size: 14px;
+      font-weight: 500;
     }
 
     .toast.show {
@@ -247,13 +414,18 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     @keyframes fadeOut {
       from { opacity: 1; }
       to { opacity: 0; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
   </style>
 </head>
@@ -275,15 +447,34 @@
       <select class="route-select" id="routeSelect" onchange="filterByRoute()">
         <option value="">전체 노선</option>
       </select>
-      <button class="edit-btn" id="editBtn" onclick="toggleEditMode()">추가삭제</button>
+      <button class="edit-btn" id="editBtn" onclick="toggleEditMode()">편집</button>
     </div>
 
     <div class="memo-section">
-      <textarea class="memo-input" id="memoInput" placeholder="메모 입력..." oninput="saveMemoDebounced()"></textarea>
+      <textarea class="memo-input" id="memoInput" placeholder="📝 메모 입력..." oninput="saveMemoDebounced()"></textarea>
     </div>
 
-    <div class="students-list" id="studentsList">
-      <div class="loading">로딩 중...</div>
+    <div class="students-container">
+      <div class="students-list" id="studentsList">
+        <div class="loading">로딩 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar" id="bottomBar">
+    <button class="reset-btn" onclick="resetAllBoarding()">운행 종료 (전체 초기화)</button>
+  </div>
+
+  <!-- 상태 팝업 -->
+  <div class="status-popup" id="statusPopup">
+    <div class="popup-content">
+      <div class="popup-title" id="popupTitle">상태 선택</div>
+      <div class="status-options">
+        <div class="status-option 결석" onclick="setStatus('결석')">결석</div>
+        <div class="status-option 시간변경" onclick="setStatus('시간변경')">시간변경</div>
+        <div class="status-option 직접등원" onclick="setStatus('직접등원')">직접등원</div>
+        <div class="status-option 취소" onclick="setStatus(null)">상태 초기화</div>
+      </div>
     </div>
   </div>
 
@@ -294,12 +485,29 @@
     let currentDay = '월';
     let currentRoute = '';
     let isEditMode = false;
+    let boardedStudents = new Set(); // 탑승한 학생 ID 저장
     let memoSaveTimeout = null;
+    let longPressTimer = null;
+    let currentLongPressStudent = null;
 
     // 초기 로드
     window.onload = function() {
       loadAllData();
+      loadBoardingState();
     };
+
+    // 탑승 상태 로컬 저장소 로드
+    function loadBoardingState() {
+      const saved = localStorage.getItem('boardedStudents_' + currentDay);
+      if (saved) {
+        boardedStudents = new Set(JSON.parse(saved));
+      }
+    }
+
+    // 탑승 상태 로컬 저장소 저장
+    function saveBoardingState() {
+      localStorage.setItem('boardedStudents_' + currentDay, JSON.stringify([...boardedStudents]));
+    }
 
     // 모든 데이터 로드
     function loadAllData() {
@@ -319,8 +527,8 @@
     // 요일 변경
     function changeDay(day) {
       currentDay = day;
+      loadBoardingState();
 
-      // 탭 활성화
       document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.remove('active');
         if (tab.textContent.includes(day)) {
@@ -371,7 +579,7 @@
         const memo = document.getElementById('memoInput').value;
         google.script.run
           .withSuccessHandler(function() {
-            // 자동 저장 - 토스트 표시 안 함
+            // 자동 저장
           })
           .saveMemo(currentDay, memo);
       }, 1000);
@@ -385,10 +593,18 @@
         students = students.filter(s => s.route === currentRoute);
       }
 
+      // 시간순 정렬
+      students.sort((a, b) => {
+        if (a.time < b.time) return -1;
+        if (a.time > b.time) return 1;
+        return 0;
+      });
+
       const container = document.getElementById('studentsList');
 
       if (students.length === 0) {
         container.innerHTML = '<div class="loading">학생이 없습니다.</div>';
+        document.getElementById('bottomBar').classList.remove('show');
         return;
       }
 
@@ -412,28 +628,119 @@
       }
 
       students.forEach(student => {
+        const isBoarded = boardedStudents.has(student.id);
+        const boardedClass = isBoarded ? 'boarded' : '';
         const statusClass = student.status ? 'status-' + student.status : '';
+
         html += `
-          <div class="student-item ${statusClass}">
-            ${isEditMode ? `<button class="delete-btn" onclick="deleteStudent('${student.name}')">×</button>` : ''}
-            <div class="student-name">${student.name}</div>
-            <div class="student-info">
-              ${student.route} | ${student.station} | ${student.time}
-            </div>
-            <div class="student-actions">
-              <button class="status-btn ${student.status === '결석' ? 'active' : ''}"
-                      onclick="changeStatus('${student.name}', '결석')">결석</button>
-              <button class="status-btn ${student.status === '시간변경' ? 'active' : ''}"
-                      onclick="changeStatus('${student.name}', '시간변경')">시간변경</button>
-              <button class="status-btn ${student.status === '직접등원' ? 'active' : ''}"
-                      onclick="changeStatus('${student.name}', '직접등원')">직접등원</button>
-              <button class="status-btn" onclick="changeStatus('${student.name}', null)">초기화</button>
+          <div class="student-card ${boardedClass} ${statusClass}"
+               data-id="${student.id}"
+               data-name="${student.name}"
+               ontouchstart="handleTouchStart(event, '${student.id}', '${student.name}')"
+               ontouchend="handleTouchEnd(event, '${student.id}')"
+               ontouchcancel="handleTouchCancel()"
+               onclick="toggleBoarding('${student.id}')">
+            ${isEditMode ? `<button class="delete-btn" onclick="event.stopPropagation(); deleteStudent('${student.name}')">×</button>` : ''}
+            ${student.route ? `<div class="route-badge">${student.route}</div>` : ''}
+            ${student.status ? `<div class="status-badge">${student.status}</div>` : ''}
+            <div class="card-content">
+              <div class="time">${student.time}</div>
+              <div class="station">${student.station}</div>
+              <div class="name">${student.name}</div>
             </div>
           </div>
         `;
       });
 
       container.innerHTML = html;
+
+      // 탑승한 학생이 있으면 하단바 표시
+      if (boardedStudents.size > 0) {
+        document.getElementById('bottomBar').classList.add('show');
+      } else {
+        document.getElementById('bottomBar').classList.remove('show');
+      }
+    }
+
+    // 터치 시작 (롱프레스 감지)
+    function handleTouchStart(event, studentId, studentName) {
+      if (isEditMode) return;
+
+      const card = event.currentTarget;
+      card.classList.add('pressing');
+
+      currentLongPressStudent = { id: studentId, name: studentName };
+
+      longPressTimer = setTimeout(function() {
+        // 0.5초 후 팝업 표시
+        showStatusPopup(studentName);
+        navigator.vibrate && navigator.vibrate(50); // 진동 피드백
+      }, 500);
+    }
+
+    // 터치 종료
+    function handleTouchEnd(event, studentId) {
+      const card = event.currentTarget;
+      card.classList.remove('pressing');
+
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    }
+
+    // 터치 취소
+    function handleTouchCancel() {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      document.querySelectorAll('.student-card').forEach(card => {
+        card.classList.remove('pressing');
+      });
+    }
+
+    // 탑승 토글
+    function toggleBoarding(studentId) {
+      if (isEditMode) return;
+      if (longPressTimer) return; // 롱프레스 중이면 무시
+
+      if (boardedStudents.has(studentId)) {
+        boardedStudents.delete(studentId);
+      } else {
+        boardedStudents.add(studentId);
+      }
+
+      saveBoardingState();
+      renderStudents();
+    }
+
+    // 상태 팝업 표시
+    function showStatusPopup(studentName) {
+      document.getElementById('popupTitle').textContent = studentName + ' 상태 선택';
+      document.getElementById('statusPopup').classList.add('show');
+    }
+
+    // 상태 설정
+    function setStatus(status) {
+      const popup = document.getElementById('statusPopup');
+      popup.classList.remove('show');
+
+      if (!currentLongPressStudent) return;
+
+      const studentName = currentLongPressStudent.name;
+
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast(status ? status + ' 설정됨' : '상태 초기화됨');
+          loadAllData();
+        })
+        .withFailureHandler(function(error) {
+          showToast('오류: ' + error);
+        })
+        .updateStatus(studentName, status, currentDay);
+
+      currentLongPressStudent = null;
     }
 
     // 편집 모드 토글
@@ -447,7 +754,7 @@
         btn.classList.add('active');
         list.classList.add('edit-mode');
       } else {
-        btn.textContent = '추가삭제';
+        btn.textContent = '편집';
         btn.classList.remove('active');
         list.classList.remove('edit-mode');
       }
@@ -455,24 +762,14 @@
       renderStudents();
     }
 
-    // 상태 변경
-    function changeStatus(name, status) {
-      const currentStatus = allStudents.find(s => s.name === name && s.day === currentDay)?.status;
+    // 전체 탑승 초기화
+    function resetAllBoarding() {
+      if (!confirm('모든 탑승 체크를 초기화하시겠습니까?')) return;
 
-      // 같은 상태 클릭하면 초기화
-      if (currentStatus === status) {
-        status = null;
-      }
-
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('상태가 변경되었습니다.');
-          loadAllData();
-        })
-        .withFailureHandler(function(error) {
-          showToast('오류: ' + error);
-        })
-        .updateStatus(name, status, currentDay);
+      boardedStudents.clear();
+      saveBoardingState();
+      renderStudents();
+      showToast('탑승 체크가 초기화되었습니다.');
     }
 
     // 학생 추가
@@ -526,6 +823,14 @@
         toast.classList.remove('show');
       }, 3000);
     }
+
+    // 팝업 외부 클릭시 닫기
+    document.getElementById('statusPopup').addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+        currentLongPressStudent = null;
+      }
+    });
   </script>
 </body>
 </html>
